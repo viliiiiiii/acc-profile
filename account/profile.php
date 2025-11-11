@@ -348,6 +348,14 @@ function profile_notification_types(): array
             'label'       => 'System announcements',
             'description' => 'Release notes and scheduled maintenance updates from the team.',
         ],
+        'security.login_alert' => [
+            'label'       => 'Sign-in alerts',
+            'description' => 'Ping me when a new device signs in with my account.',
+        ],
+        'digest.weekly' => [
+            'label'       => 'Weekly digest',
+            'description' => 'Friday recap email with overdue tasks and unread notes.',
+        ],
     ];
 }
 
@@ -441,6 +449,98 @@ function profile_notification_summary(array $notificationPrefs): array
     ];
 }
 
+function profile_notification_counts(int $localUserId): array
+{
+    try {
+        $pdo = notif_pdo();
+    } catch (Throwable $e) {
+        return [];
+    }
+
+    try {
+        $stmt = $pdo->prepare('SELECT
+                SUM(CASE WHEN is_read = 0 THEN 1 ELSE 0 END) AS unread,
+                COUNT(*) AS total,
+                MAX(created_at) AS last_created,
+                SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS recent
+            FROM notifications
+            WHERE user_id = :uid');
+        $stmt->execute([':uid' => $localUserId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+    } catch (Throwable $e) {
+        return [];
+    }
+
+    $lastCreated = $row['last_created'] ?? null;
+    return [
+        'unread'                 => (int)($row['unread'] ?? 0),
+        'recent'                 => (int)($row['recent'] ?? 0),
+        'total'                  => (int)($row['total'] ?? 0),
+        'last_created_at'        => $lastCreated,
+        'last_created_formatted' => profile_format_datetime($lastCreated),
+        'last_created_relative'  => profile_relative_time($lastCreated),
+    ];
+}
+
+function profile_fetch_recent_notifications(int $localUserId, int $limit = 5): array
+{
+    try {
+        $pdo = notif_pdo();
+    } catch (Throwable $e) {
+        return [];
+    }
+
+    try {
+        $stmt = $pdo->prepare('SELECT id, title, body, url, is_read, created_at
+            FROM notifications
+            WHERE user_id = :uid
+            ORDER BY created_at DESC
+            LIMIT :lim');
+        $stmt->bindValue(':uid', $localUserId, PDO::PARAM_INT);
+        $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    } catch (Throwable $e) {
+        return [];
+    }
+
+    $out = [];
+    foreach ($rows as $row) {
+        $created = $row['created_at'] ?? null;
+        $out[] = [
+            'title'     => trim((string)($row['title'] ?? '')) ?: 'Notification',
+            'body'      => trim((string)($row['body'] ?? '')),
+            'url'       => $row['url'] ?? null,
+            'is_read'   => !empty($row['is_read']),
+            'created'   => $created,
+            'relative'  => profile_relative_time($created),
+            'formatted' => profile_format_datetime($created),
+        ];
+    }
+
+    return $out;
+}
+
+function profile_fetch_sectors(PDO $pdo): array
+{
+    try {
+        $stmt = $pdo->query('SELECT id, name FROM sectors ORDER BY name');
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    } catch (Throwable $e) {
+        return [];
+    }
+
+    $sectors = [];
+    foreach ($rows as $row) {
+        if (!isset($row['id'])) {
+            continue;
+        }
+        $sectors[(int)$row['id']] = (string)($row['name'] ?? '');
+    }
+
+    return $sectors;
+}
+
 function profile_security_highlight(array $securityEvents): ?array
 {
     if (!$securityEvents) {
@@ -467,7 +567,13 @@ function profile_security_highlight(array $securityEvents): ?array
     ];
 }
 
-function profile_collect_insights(array $user, array $notificationPrefs, array $notificationDevices, array $securityEvents): array
+function profile_collect_insights(
+    array $user,
+    array $notificationPrefs,
+    array $notificationDevices,
+    array $securityEvents,
+    array $notificationStats = []
+): array
 {
     $insights = [];
 
@@ -505,6 +611,27 @@ function profile_collect_insights(array $user, array $notificationPrefs, array $
             'title'   => 'Notification coverage',
             'primary' => $primary,
             'meta'    => $metaParts ? implode(' • ', $metaParts) : 'No channels enabled.',
+        ];
+    }
+
+    if ($notificationStats) {
+        $unread = (int)($notificationStats['unread'] ?? 0);
+        $primary = $unread === 0 ? 'Inbox clear' : $unread . ' unread';
+        $metaBits = [];
+        if (!empty($notificationStats['last_created_relative'])) {
+            $metaBits[] = 'Last alert ' . $notificationStats['last_created_relative'];
+        }
+        $recent = (int)($notificationStats['recent'] ?? 0);
+        if ($recent > 0) {
+            $metaBits[] = $recent . ' received this week';
+        } elseif (!empty($notificationStats['total'])) {
+            $metaBits[] = (int)$notificationStats['total'] . ' received overall';
+        }
+        $insights[] = [
+            'icon'    => '📬',
+            'title'   => 'Notification inbox',
+            'primary' => $primary,
+            'meta'    => $metaBits ? implode(' • ', $metaBits) : 'We will surface new alerts here.',
         ];
     }
 
@@ -579,6 +706,18 @@ function profile_quick_actions(): array
             'label'       => 'Notes workspace',
             'description' => 'Catch up on collaboration threads.',
             'href'        => '/notes/index.php',
+        ],
+        [
+            'icon'        => '⬇️',
+            'label'       => 'Data exports',
+            'description' => 'Download XLSX or PDF reports for sharing.',
+            'href'        => '/export_tasks_excel.php',
+        ],
+        [
+            'icon'        => '🛡️',
+            'label'       => 'Security log',
+            'description' => 'Open the detailed audit and login history.',
+            'href'        => '/notifications/debug.php',
         ],
     ];
 }
@@ -680,6 +819,7 @@ if (function_exists('notif_resolve_local_user_id')) {
 }
 $notificationsAvailable = $notificationUserId !== null;
 $notificationDevices = ($notificationsAvailable) ? profile_fetch_notification_devices($notificationUserId) : [];
+$sectorOptions = profile_fetch_sectors($pdo);
 
 /* ---------- POST handlers ---------- */
 if (is_post()) {
@@ -724,6 +864,35 @@ if (is_post()) {
                     redirect_with_message('/account/profile.php', 'Email updated.', 'success');
                 } catch (Throwable $e) {
                     $errors[] = 'Failed to update email.';
+                }
+            }
+        }
+
+        if ($action === 'update_sector') {
+            $sectorValue = $_POST['sector_id'] ?? '';
+            $sectorId = ($sectorValue === '' || $sectorValue === null) ? null : (int)$sectorValue;
+
+            if ($sectorId !== null && !array_key_exists($sectorId, $sectorOptions)) {
+                $errors[] = 'Please choose a valid team/sector.';
+            }
+
+            if (!$errors) {
+                try {
+                    if ($sectorId === null) {
+                        $stmt = $pdo->prepare('UPDATE `users` SET `sector_id` = NULL WHERE `id` = ?');
+                        $stmt->execute([$userId]);
+                    } else {
+                        $stmt = $pdo->prepare('UPDATE `users` SET `sector_id` = ? WHERE `id` = ?');
+                        $stmt->execute([$sectorId, $userId]);
+                    }
+
+                    if (isset($_SESSION['user']) && is_array($_SESSION['user'])) {
+                        $_SESSION['user']['sector_id'] = $sectorId;
+                    }
+
+                    redirect_with_message('/account/profile.php', 'Primary team updated.', 'success');
+                } catch (Throwable $e) {
+                    $errors[] = 'Could not update your team.';
                 }
             }
         }
@@ -881,6 +1050,12 @@ if (is_post()) {
 }
 
 /* ---------- Derived view data ---------- */
+$notificationStats = ($notificationsAvailable && $notificationUserId)
+    ? profile_notification_counts($notificationUserId)
+    : [];
+$recentNotifications = ($notificationsAvailable && $notificationUserId)
+    ? profile_fetch_recent_notifications($notificationUserId, 6)
+    : [];
 $statusLabel = 'Active';
 $statusBadgeClass = 'badge -success';
 if (!empty($user['suspended_at'])) {
@@ -895,12 +1070,29 @@ $sectorLabel = (string)($user['sector_name'] ?? '');
 $securityEvents = fetch_recent_security_events($userId, 6);
 $membershipSummary = profile_membership_summary($user['created_at'] ?? null);
 $securityHighlight = profile_security_highlight($securityEvents);
-$insightCards = profile_collect_insights($user, $notificationPrefs, $notificationDevices, $securityEvents);
+$insightCards = profile_collect_insights($user, $notificationPrefs, $notificationDevices, $securityEvents, $notificationStats);
 $quickActions = profile_quick_actions();
 $notificationSummary = profile_notification_summary($notificationPrefs);
 $latestSecurityEvent = $securityEvents[0] ?? null;
 $lastActiveRelative = (string)($latestSecurityEvent['relative'] ?? '');
 $lastActiveFull = (string)($latestSecurityEvent['formatted'] ?? '');
+$dataExportLinks = [
+    [
+        'label' => 'Export task workbook',
+        'description' => 'Download an Excel file of every task you can view.',
+        'href' => '/export_tasks_excel.php',
+    ],
+    [
+        'label' => 'Building PDF rollup',
+        'description' => 'Generate a printable PDF summary for your buildings.',
+        'href' => '/export_building_pdf.php',
+    ],
+    [
+        'label' => 'Room photo archive',
+        'description' => 'Review recent room photos shared with the team.',
+        'href' => '/public_room_photos.php',
+    ],
+];
 
 $title = 'My Profile';
 include __DIR__ . '/../includes/header.php';
@@ -1033,6 +1225,36 @@ include __DIR__ . '/../includes/header.php';
           <input type="hidden" name="<?php echo CSRF_TOKEN_NAME; ?>" value="<?php echo csrf_token(); ?>">
           <button class="btn primary" type="submit">Save email</button>
         </div>
+      </form>
+
+      <form method="post" class="profile-panel card">
+        <div class="profile-panel__header">
+          <h2>Team &amp; region</h2>
+          <p class="profile-panel__subtitle">Tag your primary sector so reports and exports stay relevant.</p>
+        </div>
+        <?php if ($sectorOptions): ?>
+          <div class="profile-panel__body">
+            <label class="profile-field">Primary team
+              <select name="sector_id">
+                <option value="">No primary team</option>
+                <?php $currentSectorId = isset($user['sector_id']) ? (int)$user['sector_id'] : null; ?>
+                <?php foreach ($sectorOptions as $id => $name): ?>
+                  <option value="<?php echo (int)$id; ?>"<?php echo ($currentSectorId !== null && $currentSectorId === (int)$id) ? ' selected' : ''; ?>><?php echo sanitize($name ?: 'Unnamed'); ?></option>
+                <?php endforeach; ?>
+              </select>
+            </label>
+            <p class="profile-help muted">Your choice personalizes dashboards and shared exports.</p>
+          </div>
+          <div class="profile-panel__footer">
+            <input type="hidden" name="action" value="update_sector">
+            <input type="hidden" name="<?php echo CSRF_TOKEN_NAME; ?>" value="<?php echo csrf_token(); ?>">
+            <button class="btn primary" type="submit">Save team</button>
+          </div>
+        <?php else: ?>
+          <div class="profile-panel__body">
+            <p class="muted">We could not load sector options. Ask an administrator to add sectors.</p>
+          </div>
+        <?php endif; ?>
       </form>
 
       <form method="post" class="profile-panel card">
@@ -1217,6 +1439,41 @@ include __DIR__ . '/../includes/header.php';
         </div>
       </section>
 
+      <?php if ($notificationsAvailable): ?>
+        <section class="profile-panel card">
+          <div class="profile-panel__header">
+            <h2>Inbox preview</h2>
+            <p class="profile-panel__subtitle">Last few notifications delivered to you.</p>
+          </div>
+          <div class="profile-panel__body">
+            <?php if ($recentNotifications): ?>
+              <ul class="inbox-list">
+                <?php foreach ($recentNotifications as $item): ?>
+                  <li class="inbox-item<?php echo $item['is_read'] ? ' is-read' : ''; ?>">
+                    <span class="inbox-item__status" aria-hidden="true"></span>
+                    <div class="inbox-item__content">
+                      <div class="inbox-item__title">
+                        <?php if (!empty($item['url'])): ?>
+                          <a href="<?php echo sanitize($item['url']); ?>"><?php echo sanitize($item['title']); ?></a>
+                        <?php else: ?>
+                          <?php echo sanitize($item['title']); ?>
+                        <?php endif; ?>
+                      </div>
+                      <?php if (!empty($item['body'])): ?>
+                        <p class="inbox-item__body"><?php echo sanitize($item['body']); ?></p>
+                      <?php endif; ?>
+                      <div class="inbox-item__meta"><?php echo sanitize($item['relative'] ?: $item['formatted']); ?></div>
+                    </div>
+                  </li>
+                <?php endforeach; ?>
+              </ul>
+            <?php else: ?>
+              <p class="muted">All caught up! We will list new alerts here once they arrive.</p>
+            <?php endif; ?>
+          </div>
+        </section>
+      <?php endif; ?>
+
       <?php if ($notificationsAvailable && $notificationSummary['total_types'] > 0): ?>
         <section class="profile-panel card">
           <div class="profile-panel__header">
@@ -1248,6 +1505,26 @@ include __DIR__ . '/../includes/header.php';
           </div>
         </section>
       <?php endif; ?>
+
+      <section class="profile-panel card">
+        <div class="profile-panel__header">
+          <h2>Data tools</h2>
+          <p class="profile-panel__subtitle">On-demand exports you can share with stakeholders.</p>
+        </div>
+        <div class="profile-panel__body">
+          <ul class="export-list">
+            <?php foreach ($dataExportLinks as $export): ?>
+              <li class="export-row">
+                <div class="export-row__text">
+                  <a class="export-row__link" href="<?php echo sanitize($export['href']); ?>"><?php echo sanitize($export['label']); ?></a>
+                  <p class="export-row__meta muted"><?php echo sanitize($export['description']); ?></p>
+                </div>
+                <span aria-hidden="true" class="export-row__chevron">⟶</span>
+              </li>
+            <?php endforeach; ?>
+          </ul>
+        </div>
+      </section>
     </aside>
   </div>
 </div>
