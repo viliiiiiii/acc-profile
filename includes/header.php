@@ -206,10 +206,22 @@ $breadcrumbs = build_breadcrumbs($path);
       </nav>
 
       <div class="nav-panel__actions">
-        <a class="nav__bell" href="/notifications/index.php" aria-label="Open notifications">
-          <span class="nav__bell-icon" aria-hidden="true">🔔</span>
-          <span id="notifDot" class="nav__bell-dot" aria-hidden="true"></span>
-        </a>
+        <div class="nav__bell-wrapper" data-notif-bell>
+          <a class="nav__bell" href="/notifications/index.php" aria-label="Open notifications" data-notif-bell-trigger>
+            <span class="nav__bell-icon" aria-hidden="true">🔔</span>
+            <span id="notifDot" class="nav__bell-dot" aria-hidden="true"></span>
+          </a>
+          <div class="nav__bell-popover" data-notif-popover hidden>
+            <div class="nav__bell-popover__heading">Recent activity</div>
+            <div class="nav__bell-popover__body" data-notif-popover-body>
+              <p class="nav__bell-empty" data-notif-popover-empty>You're all caught up.</p>
+              <ul class="nav__bell-list" data-notif-popover-list hidden></ul>
+            </div>
+            <div class="nav__bell-popover__footer">
+              <a href="/notifications/index.php">View all</a>
+            </div>
+          </div>
+        </div>
 
         <button type="button" class="nav__command" data-command-open>
           <span class="nav__command-icon" aria-hidden="true">⌘</span>
