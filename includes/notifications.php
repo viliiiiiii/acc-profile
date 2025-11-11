@@ -287,13 +287,18 @@ function notif_list(int $userId, int $limit = 20, int $offset = 0): array {
 
 function notif_mark_read(int $userId, int $notifId): void {
     $pdo = notif_pdo();
-    $pdo->prepare("UPDATE notifications SET is_read=1, read_at=NOW()
-                   WHERE id=:id AND user_id=:u")->execute([':id'=>$notifId, ':u'=>$userId]);
+    $sql = "UPDATE notifications SET is_read=1, read_at=NOW() WHERE id=:id AND user_id=:u";
+    $pdo->prepare($sql)->execute([':id' => $notifId, ':u' => $userId]);
+}
+function notif_mark_unread(int $userId, int $notifId): void {
+    $pdo = notif_pdo();
+    $sql = "UPDATE notifications SET is_read=0, read_at=NULL WHERE id=:id AND user_id=:u";
+    $pdo->prepare($sql)->execute([':id' => $notifId, ':u' => $userId]);
 }
 function notif_mark_all_read(int $userId): void {
     $pdo = notif_pdo();
-    $pdo->prepare("UPDATE notifications SET is_read=1, read_at=NOW()
-                   WHERE user_id=:u AND is_read=0")->execute([':u'=>$userId]);
+    $sql = "UPDATE notifications SET is_read=1, read_at=NOW() WHERE user_id=:u AND is_read=0";
+    $pdo->prepare($sql)->execute([':u' => $userId]);
 }
 function notif_touch_web_device(int $userId, string $userAgent): void {
     $pdo = notif_pdo();
