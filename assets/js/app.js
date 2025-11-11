@@ -347,6 +347,15 @@ function initNotifications() {
 
   const streamUrl = body.dataset.notifStream;
   const pollUrl = body.dataset.notifPoll;
+  const bellWrapper = document.querySelector('[data-notif-bell]');
+  const popover = bellWrapper ? bellWrapper.querySelector('[data-notif-popover]') : null;
+  const popoverList = popover ? popover.querySelector('[data-notif-popover-list]') : null;
+  const popoverEmpty = popover ? popover.querySelector('[data-notif-popover-empty]') : null;
+  const bellTrigger = bellWrapper ? bellWrapper.querySelector('[data-notif-bell-trigger]') : null;
+  const peekUrl = '/notifications/api.php?action=peek&limit=3';
+  const defaultEmptyText = popoverEmpty ? popoverEmpty.textContent : "You're all caught up.";
+  let hidePopoverTimer = null;
+  let lastPeekAt = 0;
 
   const renderCount = (count) => {
     const num = Number(count) || 0;
@@ -363,6 +372,180 @@ function initNotifications() {
   const showToasts = (items = []) => {
     items.forEach((item) => createToast(item));
   };
+
+  const renderPeek = (items = []) => {
+    if (!popoverList || !popoverEmpty) return;
+    popoverList.innerHTML = '';
+    if (!items.length) {
+      popoverList.hidden = true;
+      popoverEmpty.textContent = defaultEmptyText;
+      popoverEmpty.hidden = false;
+      return;
+    }
+
+    const fragment = document.createDocumentFragment();
+    items.forEach((item) => {
+      const li = document.createElement('li');
+      li.className = 'nav__bell-item';
+      if (!item.is_read) {
+        li.classList.add('is-unread');
+      }
+
+      const link = document.createElement('a');
+      const href = typeof item.url === 'string' && item.url.trim() ? item.url : '/notifications/index.php';
+      link.className = 'nav__bell-item-link';
+      link.href = href;
+
+      const title = document.createElement('div');
+      title.className = 'nav__bell-item-title';
+      title.innerHTML = sanitizeText(item.title || 'Notification');
+      link.appendChild(title);
+
+      if (item.body) {
+        const rawBody = String(item.body || '').trim();
+        if (rawBody !== '') {
+          let snippet = rawBody;
+          if (snippet.length > 160) {
+            snippet = `${snippet.slice(0, 157)}…`;
+          }
+          const body = document.createElement('div');
+          body.className = 'nav__bell-item-body';
+          body.innerHTML = sanitizeText(snippet);
+          link.appendChild(body);
+        }
+      }
+
+      const rawTime = item.created_at || '';
+      const rel = formatRelativeTime(rawTime);
+      const parsed = rawTime ? new Date(rawTime) : null;
+      const hasDate = parsed && !Number.isNaN(parsed.getTime());
+      if (rel || hasDate) {
+        const meta = document.createElement('div');
+        meta.className = 'nav__bell-item-meta';
+        if (rel) {
+          const relNode = document.createElement('span');
+          relNode.textContent = rel;
+          meta.appendChild(relNode);
+        }
+        if (hasDate) {
+          const time = document.createElement('time');
+          time.dateTime = rawTime;
+          time.textContent = parsed.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+          meta.appendChild(time);
+        }
+        link.appendChild(meta);
+      }
+
+      li.appendChild(link);
+      fragment.appendChild(li);
+    });
+
+    popoverList.appendChild(fragment);
+    popoverList.hidden = false;
+    popoverEmpty.textContent = defaultEmptyText;
+    popoverEmpty.hidden = true;
+  };
+
+  const fetchPeek = async (force = false) => {
+    if (!popover || !popoverList) return;
+    const now = Date.now();
+    if (!force && now - lastPeekAt < 15000) return;
+    lastPeekAt = now;
+    try {
+      const resp = await fetch(peekUrl, {
+        credentials: 'same-origin',
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+      });
+      if (!resp.ok) {
+        throw new Error('bad_status');
+      }
+      const json = await resp.json();
+      if (!json || json.ok !== true) {
+        throw new Error('bad_payload');
+      }
+      renderPeek(Array.isArray(json.items) ? json.items : []);
+      if (typeof json.count !== 'undefined') {
+        renderCount(json.count);
+      }
+    } catch (err) {
+      if (popoverEmpty) {
+        popoverEmpty.textContent = 'Unable to load previews.';
+        popoverEmpty.hidden = false;
+      }
+      if (popoverList) {
+        popoverList.hidden = true;
+        popoverList.innerHTML = '';
+      }
+    }
+  };
+
+  const openPopover = () => {
+    if (!popover) return;
+    if (hidePopoverTimer) {
+      clearTimeout(hidePopoverTimer);
+      hidePopoverTimer = null;
+    }
+    if (popover.hidden) {
+      popover.hidden = false;
+      requestAnimationFrame(() => {
+        popover.classList.add('is-open');
+      });
+    } else {
+      popover.classList.add('is-open');
+    }
+    fetchPeek();
+  };
+
+  const closePopover = () => {
+    if (!popover) return;
+    if (hidePopoverTimer) {
+      clearTimeout(hidePopoverTimer);
+    }
+    hidePopoverTimer = setTimeout(() => {
+      popover.classList.remove('is-open');
+      popover.hidden = true;
+    }, 120);
+  };
+
+  if (bellWrapper && popover) {
+    bellWrapper.addEventListener('mouseenter', openPopover);
+    bellWrapper.addEventListener('mouseleave', closePopover);
+    popover.addEventListener('mouseenter', () => {
+      if (hidePopoverTimer) {
+        clearTimeout(hidePopoverTimer);
+        hidePopoverTimer = null;
+      }
+    });
+    popover.addEventListener('mouseleave', closePopover);
+    popover.addEventListener('focusin', () => {
+      if (hidePopoverTimer) {
+        clearTimeout(hidePopoverTimer);
+        hidePopoverTimer = null;
+      }
+    });
+    popover.addEventListener('focusout', (event) => {
+      if (!popover.contains(event.relatedTarget)) {
+        closePopover();
+      }
+    });
+    if (bellTrigger) {
+      bellTrigger.addEventListener('focus', openPopover);
+      bellTrigger.addEventListener('blur', closePopover);
+      bellTrigger.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          closePopover();
+        }
+      });
+    }
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !popover.hidden) {
+        closePopover();
+      }
+    });
+  }
 
   if (streamUrl && 'EventSource' in window) {
     let es;
