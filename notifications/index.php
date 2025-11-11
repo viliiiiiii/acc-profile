@@ -393,6 +393,150 @@ document.addEventListener('DOMContentLoaded', () => {
     if (markAllBtn) {
       markAllBtn.disabled = count === 0;
     }
+    if (statNodes.unread) {
+      statNodes.unread.textContent = count;
+    }
+  }
+
+  function updateDaySections(visibleMap) {
+    document.querySelectorAll('[data-day-section]').forEach(section => {
+      const visibleCount = visibleMap.get(section) || 0;
+      const countNode = section.querySelector('[data-day-count]');
+      section.hidden = visibleCount === 0;
+      if (countNode) {
+        countNode.textContent = visibleCount === 1 ? '1 update' : `${visibleCount} updates`;
+      }
+    });
+  }
+
+  function applyFilters() {
+    if (!entries.length) {
+      if (emptyState) {
+        emptyState.hidden = false;
+        if (emptyTitle) {
+          emptyTitle.textContent = emptyState.dataset.baseTitle || 'You’re all caught up';
+        }
+        if (emptyMessage) {
+          emptyMessage.textContent = emptyState.dataset.baseMessage || 'When new activity arrives, it will appear here automatically.';
+        }
+        if (emptyReset) {
+          emptyReset.hidden = true;
+        }
+      }
+      updateMatchDisplay(0);
+      updateDaySections(new Map());
+      return;
+    }
+
+    const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+    const filter = currentFilter;
+    const visibleMap = new Map();
+    let visible = 0;
+
+    entries.forEach(entry => {
+      const category = entry.dataset.category || 'other';
+      const isUnread = entry.dataset.read === '0';
+      const matchesFilter = filter === 'all'
+        || (filter === 'unread' && isUnread)
+        || (filter === category)
+        || (filter === 'recent' && (entry.dataset.dayTag === 'today' || entry.dataset.dayTag === 'yesterday'));
+      const haystack = entry.dataset.search || '';
+      const matchesSearch = !query || haystack.indexOf(query) !== -1;
+
+      const show = matchesFilter && matchesSearch;
+      entry.hidden = !show;
+      entry.classList.toggle('is-hidden', !show);
+
+      if (show) {
+        visible += 1;
+        const section = entry.closest('[data-day-section]');
+        if (section) {
+          visibleMap.set(section, (visibleMap.get(section) || 0) + 1);
+        }
+      }
+    });
+
+    updateDaySections(visibleMap);
+    updateMatchDisplay(visible);
+
+    if (emptyState) {
+      if (visible === 0) {
+        emptyState.hidden = false;
+        if (emptyTitle) {
+          emptyTitle.textContent = emptyState.dataset.filterTitle || 'No notifications match';
+        }
+        if (emptyMessage) {
+          emptyMessage.textContent = emptyState.dataset.filterMessage || 'Clear filters or adjust your search to see more updates.';
+        }
+        if (emptyReset) {
+          emptyReset.hidden = false;
+        }
+      } else {
+        emptyState.hidden = true;
+        if (emptyReset) {
+          emptyReset.hidden = true;
+        }
+      }
+    }
+  }
+
+  calculateStats();
+  renderCount(getUnreadCount());
+  applyFilters();
+
+  filterButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentFilter = btn.dataset.filter || 'all';
+      filterButtons.forEach(b => {
+        const isActive = b === btn;
+        b.classList.toggle('is-active', isActive);
+        b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+      applyFilters();
+    });
+  });
+
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      applyFilters();
+      if (clearSearch) {
+        clearSearch.hidden = searchInput.value.length === 0;
+      }
+    });
+  }
+
+  if (clearSearch) {
+    clearSearch.addEventListener('click', () => {
+      if (searchInput) {
+        searchInput.value = '';
+      }
+      clearSearch.hidden = true;
+      applyFilters();
+      if (searchInput) {
+        searchInput.focus();
+      }
+    });
+    if (!searchInput || !searchInput.value) {
+      clearSearch.hidden = true;
+    }
+  }
+
+  if (emptyReset) {
+    emptyReset.addEventListener('click', () => {
+      currentFilter = 'all';
+      filterButtons.forEach(b => {
+        const isActive = b.dataset.filter === 'all';
+        b.classList.toggle('is-active', isActive);
+        b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+      if (searchInput) {
+        searchInput.value = '';
+      }
+      if (clearSearch) {
+        clearSearch.hidden = true;
+      }
+      applyFilters();
+    });
   }
 
   function updateDaySections(visibleMap) {
