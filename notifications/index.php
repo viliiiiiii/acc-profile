@@ -190,139 +190,147 @@ $emptyMessage = $hasNotifications
 $title = 'Notifications';
 include __DIR__ . '/../includes/header.php';
 ?>
-<section class="notifications-shell">
-  <header class="notif-hero">
-    <div class="notif-hero__intro">
-      <div class="notif-pill<?php echo $unreadTotal ? '' : ' is-zero'; ?>" data-unread-wrapper>
-        <span class="notif-pill__count" data-unread-count><?php echo (int)$unreadTotal; ?></span>
-        <span class="notif-pill__label">Unread</span>
+<section class="notifications-board">
+  <aside class="notifications-board__side">
+    <header class="notif-side__header">
+      <h1>Notifications</h1>
+      <p class="notif-side__hint">Catch up on recent activity without leaving this page.</p>
+    </header>
+    <div class="notif-count<?php echo $unreadTotal ? '' : ' is-zero'; ?>" data-unread-wrapper>
+      <span class="notif-count__value" data-unread-count><?php echo (int)$unreadTotal; ?></span>
+      <span class="notif-count__label">Unread</span>
+    </div>
+    <div class="notif-side__section">
+      <h2 class="notif-section-title">At a glance</h2>
+      <div class="notif-summary">
+        <article class="notif-summary__item" data-stat="unread">
+          <span class="notif-stat__label">Unread</span>
+          <span class="notif-stat__value"><?php echo (int)$unreadTotal; ?></span>
+          <span class="notif-stat__hint">Awaiting review</span>
+        </article>
+        <article class="notif-summary__item" data-stat="today">
+          <span class="notif-stat__label">Today</span>
+          <span class="notif-stat__value"><?php echo (int)$todayCount; ?></span>
+          <span class="notif-stat__hint">Arrived since midnight</span>
+        </article>
+        <article class="notif-summary__item" data-stat="week">
+          <span class="notif-stat__label">This week</span>
+          <span class="notif-stat__value"><?php echo (int)$weekCount; ?></span>
+          <span class="notif-stat__hint">Past seven days</span>
+        </article>
+        <article class="notif-summary__item" data-stat="total">
+          <span class="notif-stat__label">Listed here</span>
+          <span class="notif-stat__value"><?php echo (int)$totalCount; ?></span>
+          <span class="notif-stat__hint">Matching filters</span>
+        </article>
       </div>
-      <h1>Activity center</h1>
-      <p class="muted">All your task, note, and share alerts in one compact view.</p>
-      <p class="notif-hero__signal" data-match-text>
+    </div>
+    <div class="notif-side__section">
+      <h2 class="notif-section-title">Filter by</h2>
+      <div class="notif-filter" role="group" aria-label="Notification filters">
+        <button type="button" class="notif-filter__btn is-active" data-filter="all" aria-pressed="true">All</button>
+        <button type="button" class="notif-filter__btn" data-filter="unread" aria-pressed="false">Unread</button>
+        <button type="button" class="notif-filter__btn" data-filter="recent" aria-pressed="false">Recent</button>
+        <button type="button" class="notif-filter__btn" data-filter="task" aria-pressed="false">Tasks</button>
+        <button type="button" class="notif-filter__btn" data-filter="note" aria-pressed="false">Notes</button>
+        <button type="button" class="notif-filter__btn" data-filter="other" aria-pressed="false">Other</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="notifications-board__main">
+    <div class="notif-main__toolbar">
+      <div class="notif-main__status" data-match-text>
         Showing <strong data-match-count><?php echo (int)$totalCount; ?></strong>
         <span data-match-label><?php echo $totalCount === 1 ? 'update' : 'updates'; ?></span>
-      </p>
+      </div>
+      <div class="notif-main__actions">
+        <form method="post" action="/notifications/api.php" class="inline" data-action="mark-all">
+          <input type="hidden" name="action" value="mark_all_read">
+          <input type="hidden" name="<?php echo CSRF_TOKEN_NAME; ?>" value="<?php echo csrf_token(); ?>">
+          <button class="btn primary small" type="submit" <?php echo $unreadTotal ? '' : 'disabled'; ?>>Mark all read</button>
+        </form>
+        <button type="button" class="btn ghost small" data-refresh>Refresh</button>
+      </div>
     </div>
-    <div class="notif-metrics">
-      <article class="notif-stat" data-stat="unread">
-        <span class="notif-stat__label">Unread</span>
-        <span class="notif-stat__value"><?php echo (int)$unreadTotal; ?></span>
-        <span class="notif-stat__hint">Across this page</span>
-      </article>
-      <article class="notif-stat" data-stat="today">
-        <span class="notif-stat__label">Today</span>
-        <span class="notif-stat__value"><?php echo (int)$todayCount; ?></span>
-        <span class="notif-stat__hint">New updates</span>
-      </article>
-      <article class="notif-stat" data-stat="week">
-        <span class="notif-stat__label">This week</span>
-        <span class="notif-stat__value"><?php echo (int)$weekCount; ?></span>
-        <span class="notif-stat__hint">Past 7 days</span>
-      </article>
-      <article class="notif-stat" data-stat="total">
-        <span class="notif-stat__label">On this page</span>
-        <span class="notif-stat__value"><?php echo (int)$totalCount; ?></span>
-        <span class="notif-stat__hint">Latest notifications</span>
-      </article>
+
+    <div class="notif-searchbar">
+      <span class="notif-searchbar__icon" aria-hidden="true">🔍</span>
+      <input type="search" class="notif-searchbar__input" placeholder="Search notifications" autocomplete="off" data-search>
+      <button type="button" class="notif-searchbar__clear" data-clear-search>Clear</button>
     </div>
-  </header>
 
-  <div class="notif-toolbar">
-    <nav class="notif-filter" aria-label="Notification filters">
-      <button type="button" class="notif-filter__btn is-active" data-filter="all" aria-pressed="true">All</button>
-      <button type="button" class="notif-filter__btn" data-filter="unread" aria-pressed="false">Unread</button>
-      <button type="button" class="notif-filter__btn" data-filter="recent" aria-pressed="false">Recent</button>
-      <button type="button" class="notif-filter__btn" data-filter="task" aria-pressed="false">Tasks</button>
-      <button type="button" class="notif-filter__btn" data-filter="note" aria-pressed="false">Notes</button>
-      <button type="button" class="notif-filter__btn" data-filter="other" aria-pressed="false">Other</button>
-    </nav>
-    <div class="notif-toolbar__actions">
-      <form method="post" action="/notifications/api.php" class="inline" data-action="mark-all">
-        <input type="hidden" name="action" value="mark_all_read">
-        <input type="hidden" name="<?php echo CSRF_TOKEN_NAME; ?>" value="<?php echo csrf_token(); ?>">
-        <button class="btn primary small" type="submit" <?php echo $unreadTotal ? '' : 'disabled'; ?>>Mark all read</button>
-      </form>
-      <button type="button" class="btn ghost small" data-refresh>Refresh</button>
-    </div>
-  </div>
-
-  <div class="notif-search">
-    <span class="notif-search__icon" aria-hidden="true">🔍</span>
-    <input type="search" class="notif-search__input" placeholder="Search notifications" autocomplete="off" data-search>
-    <button type="button" class="notif-search__clear" data-clear-search>Clear</button>
-  </div>
-
-  <?php if ($hasNotifications): ?>
-    <div class="notif-days" data-feed>
-      <?php foreach ($groups as $group): ?>
-        <section class="notif-day" data-day-section data-day-tag="<?php echo sanitize($group['tag']); ?>">
-          <header class="notif-day__header">
-            <div class="notif-day__titlewrap">
-              <h2 class="notif-day__title"><?php echo sanitize($group['label']); ?></h2>
-              <?php if (!empty($group['date'])): ?>
-                <span class="notif-day__date"><?php echo sanitize($group['date']); ?></span>
-              <?php endif; ?>
-            </div>
-            <span class="notif-day__count" data-day-count><?php $count = count($group['items']); echo $count === 1 ? '1 update' : $count . ' updates'; ?></span>
-          </header>
-          <div class="notif-day__list">
-            <?php foreach ($group['items'] as $item):
-              $isUnread = !empty($item['is_unread']);
-              $searchBlob = sanitize($item['search_blob']);
-              $timeAttr   = $item['time_attr'] ?? '';
-              $timeDisplay = $item['time_display'] ?: ($item['time_relative'] ?? '');
-            ?>
-              <article class="notif-card<?php echo $isUnread ? ' is-unread' : ''; ?>" data-entry data-id="<?php echo (int)$item['id']; ?>" data-type="<?php echo sanitize($item['type_key']); ?>" data-category="<?php echo sanitize($item['category']); ?>" data-read="<?php echo $isUnread ? '0' : '1'; ?>" data-search="<?php echo $searchBlob; ?>" data-day-tag="<?php echo sanitize($item['day_tag']); ?>" data-week="<?php echo !empty($item['week_flag']) ? '1' : '0'; ?>">
-                <div class="notif-card__icon" aria-hidden="true"><?php echo $item['icon']; ?></div>
-                <div class="notif-card__content">
-                  <div class="notif-card__heading">
-                    <span class="notif-card__title"><?php echo sanitize($item['title']); ?></span>
-                    <span class="notif-card__badge"><?php echo sanitize($item['label']); ?></span>
-                    <span class="notif-card__status<?php echo $isUnread ? ' is-unread' : ''; ?>" data-status><?php echo $isUnread ? 'Unread' : 'Read'; ?></span>
-                  </div>
-                  <?php if ($item['body'] !== ''): ?>
-                    <p class="notif-card__body"><?php echo nl2br(sanitize($item['body'])); ?></p>
-                  <?php endif; ?>
-                  <div class="notif-card__meta">
-                    <?php if ($timeAttr): ?>
-                      <time class="notif-card__time" datetime="<?php echo sanitize($timeAttr); ?>"><?php echo sanitize($timeDisplay); ?></time>
-                    <?php elseif ($timeDisplay): ?>
-                      <span class="notif-card__time"><?php echo sanitize($timeDisplay); ?></span>
+    <?php if ($hasNotifications): ?>
+      <div class="notif-groups" data-feed>
+        <?php foreach ($groups as $group): ?>
+          <section class="notif-group" data-day-section data-day-tag="<?php echo sanitize($group['tag']); ?>">
+            <header class="notif-group__header">
+              <div>
+                <h2 class="notif-group__title"><?php echo sanitize($group['label']); ?></h2>
+                <?php if (!empty($group['date'])): ?>
+                  <span class="notif-group__date"><?php echo sanitize($group['date']); ?></span>
+                <?php endif; ?>
+              </div>
+              <span class="notif-group__count" data-day-count><?php $count = count($group['items']); echo $count === 1 ? '1 update' : $count . ' updates'; ?></span>
+            </header>
+            <div class="notif-group__list">
+              <?php foreach ($group['items'] as $item):
+                $isUnread = !empty($item['is_unread']);
+                $searchBlob = sanitize($item['search_blob']);
+                $timeAttr   = $item['time_attr'] ?? '';
+                $timeDisplay = $item['time_display'] ?: ($item['time_relative'] ?? '');
+              ?>
+                <article class="notif-item<?php echo $isUnread ? ' is-unread' : ''; ?>" data-entry data-id="<?php echo (int)$item['id']; ?>" data-type="<?php echo sanitize($item['type_key']); ?>" data-category="<?php echo sanitize($item['category']); ?>" data-read="<?php echo $isUnread ? '0' : '1'; ?>" data-search="<?php echo $searchBlob; ?>" data-day-tag="<?php echo sanitize($item['day_tag']); ?>" data-week="<?php echo !empty($item['week_flag']) ? '1' : '0'; ?>">
+                  <div class="notif-item__icon" aria-hidden="true"><?php echo $item['icon']; ?></div>
+                  <div class="notif-item__body">
+                    <div class="notif-item__head">
+                      <span class="notif-item__title"><?php echo sanitize($item['title']); ?></span>
+                      <span class="notif-item__badge"><?php echo sanitize($item['label']); ?></span>
+                      <span class="notif-item__status<?php echo $isUnread ? ' is-unread' : ''; ?>" data-status><?php echo $isUnread ? 'Unread' : 'Read'; ?></span>
+                    </div>
+                    <?php if ($item['body'] !== ''): ?>
+                      <p class="notif-item__text"><?php echo nl2br(sanitize($item['body'])); ?></p>
                     <?php endif; ?>
-                    <div class="notif-card__actions">
-                      <?php if (!empty($item['url'])): ?>
-                        <a class="btn ghost xsmall" href="<?php echo sanitize($item['url']); ?>">Open</a>
+                    <div class="notif-item__meta">
+                      <?php if ($timeAttr): ?>
+                        <time class="notif-item__time" datetime="<?php echo sanitize($timeAttr); ?>"><?php echo sanitize($timeDisplay); ?></time>
+                      <?php elseif ($timeDisplay): ?>
+                        <span class="notif-item__time"><?php echo sanitize($timeDisplay); ?></span>
                       <?php endif; ?>
-                      <form method="post" action="/notifications/api.php" class="notif-card__toggle" data-action="toggle-read">
-                        <input type="hidden" name="id" value="<?php echo (int)$item['id']; ?>">
-                        <input type="hidden" name="<?php echo CSRF_TOKEN_NAME; ?>" value="<?php echo csrf_token(); ?>">
-                        <button type="submit" class="btn ghost xsmall" name="action" value="mark_read" data-toggle-read <?php echo $isUnread ? '' : 'hidden'; ?>>Mark read</button>
-                        <button type="submit" class="btn ghost xsmall" name="action" value="mark_unread" data-toggle-unread <?php echo $isUnread ? 'hidden' : ''; ?>>Mark unread</button>
-                      </form>
+                      <div class="notif-item__actions">
+                        <?php if (!empty($item['url'])): ?>
+                          <a class="btn ghost xsmall" href="<?php echo sanitize($item['url']); ?>">Open</a>
+                        <?php endif; ?>
+                        <form method="post" action="/notifications/api.php" class="notif-item__toggle" data-action="toggle-read">
+                          <input type="hidden" name="id" value="<?php echo (int)$item['id']; ?>">
+                          <input type="hidden" name="<?php echo CSRF_TOKEN_NAME; ?>" value="<?php echo csrf_token(); ?>">
+                          <button type="submit" class="btn ghost xsmall" name="action" value="mark_read" data-toggle-read <?php echo $isUnread ? '' : 'hidden'; ?>>Mark read</button>
+                          <button type="submit" class="btn ghost xsmall" name="action" value="mark_unread" data-toggle-unread <?php echo $isUnread ? 'hidden' : ''; ?>>Mark unread</button>
+                        </form>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </article>
-            <?php endforeach; ?>
-          </div>
-        </section>
-      <?php endforeach; ?>
-    </div>
-  <?php endif; ?>
-
-  <div class="notif-empty" data-empty role="status"
-       data-base-title="You’re all caught up"
-       data-base-message="When new activity arrives, it will appear here automatically."
-       data-filter-title="No notifications match"
-       data-filter-message="Clear filters or adjust your search to see more updates."
-       <?php echo $hasNotifications ? 'hidden' : ''; ?>>
-    <div class="notif-empty__icon">📭</div>
-    <h2 data-empty-title><?php echo sanitize($emptyTitle); ?></h2>
-    <p class="muted" data-empty-message><?php echo sanitize($emptyMessage); ?></p>
-    <?php if ($hasNotifications): ?>
-      <button type="button" class="btn ghost small" data-empty-reset>Reset filters</button>
+                </article>
+              <?php endforeach; ?>
+            </div>
+          </section>
+        <?php endforeach; ?>
+      </div>
     <?php endif; ?>
+
+    <div class="notif-empty" data-empty role="status"
+         data-base-title="You’re all caught up"
+         data-base-message="When new activity arrives, it will appear here automatically."
+         data-filter-title="No notifications match"
+         data-filter-message="Clear filters or adjust your search to see more updates."
+         <?php echo $hasNotifications ? 'hidden' : ''; ?>>
+      <div class="notif-empty__icon">📭</div>
+      <h2 data-empty-title><?php echo sanitize($emptyTitle); ?></h2>
+      <p class="muted" data-empty-message><?php echo sanitize($emptyMessage); ?></p>
+      <?php if ($hasNotifications): ?>
+        <button type="button" class="btn ghost small" data-empty-reset>Reset filters</button>
+      <?php endif; ?>
+    </div>
   </div>
 </section>
 
@@ -550,7 +558,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const res = await fetch(form.action, {
       method: 'POST',
       body: data,
-      credentials: 'same-origin'
+      credentials: 'same-origin',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
+      }
     });
     if (!res.ok) {
       throw new Error('Request failed');

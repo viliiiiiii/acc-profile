@@ -285,6 +285,34 @@ function notif_list(int $userId, int $limit = 20, int $offset = 0): array {
     return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
 }
 
+/** Lightweight list of the latest notifications for quick previews. */
+function notif_recent(int $userId, int $limit = 3): array {
+    $limit = max(1, min(10, $limit));
+    $pdo   = notif_pdo();
+    $sql   = "SELECT id, title, body, url, is_read, created_at, type
+              FROM notifications
+              WHERE user_id = :u
+              ORDER BY id DESC
+              LIMIT :lim";
+    $stmt  = $pdo->prepare($sql);
+    $stmt->bindValue(':u', $userId, PDO::PARAM_INT);
+    $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
+    $stmt->execute();
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+    return array_map(static function (array $row): array {
+        return [
+            'id'         => (int)($row['id'] ?? 0),
+            'title'      => (string)($row['title'] ?? ''),
+            'body'       => (string)($row['body'] ?? ''),
+            'url'        => $row['url'] ?? null,
+            'is_read'    => !empty($row['is_read']) ? 1 : 0,
+            'created_at' => $row['created_at'] ?? null,
+            'type'       => (string)($row['type'] ?? ''),
+        ];
+    }, $rows);
+}
+
 function notif_mark_read(int $userId, int $notifId): void {
     $pdo = notif_pdo();
     $sql = "UPDATE notifications SET is_read=1, read_at=NOW() WHERE id=:id AND user_id=:u";

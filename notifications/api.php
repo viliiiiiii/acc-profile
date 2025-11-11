@@ -214,6 +214,17 @@ try {
             echo json_encode(['ok'=>true,'items'=>$rows,'unread'=>notif_unread_count($userId)]);
             break;
 
+        case 'peek':
+            $limit = max(1, min(10, (int)($_GET['limit'] ?? $_POST['limit'] ?? 3)));
+            $items = notif_recent($userId, $limit);
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
+                'ok'     => true,
+                'items'  => $items,
+                'count'  => notif_unread_count($userId),
+            ]);
+            break;
+
         case 'mark_read':
             if (!verify_csrf_token($_POST[CSRF_TOKEN_NAME] ?? null)) {
                 notifications_api_respond(['ok'=>false,'error'=>'csrf'], $wantsJson, 422, '', 'We could not verify that request.');
