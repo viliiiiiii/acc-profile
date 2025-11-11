@@ -1097,435 +1097,451 @@ $dataExportLinks = [
 $title = 'My Profile';
 include __DIR__ . '/../includes/header.php';
 ?>
-<div class="profile-shell">
-  <section class="profile-header card card--glass">
-    <span class="profile-header__halo" aria-hidden="true"></span>
-    <div class="profile-header__body">
-      <div class="profile-header__identity">
-        <span class="profile-header__avatar"><?php echo sanitize(profile_avatar_initial($user['email'] ?? '')); ?></span>
-        <div class="profile-header__text">
-          <p class="profile-header__eyebrow">Account center</p>
-          <h1>Welcome back</h1>
-          <p class="profile-header__subtext"><?php echo sanitize($user['email'] ?? ''); ?></p>
-        </div>
-      </div>
-      <div class="profile-header__badges">
-        <span class="profile-header__badge <?php echo sanitize($statusBadgeClass); ?>"><?php echo sanitize($statusLabel); ?></span>
-        <?php if ($roleLabel !== ''): ?>
-          <span class="profile-header__badge badge -info"><?php echo sanitize($roleLabel); ?></span>
-        <?php endif; ?>
-        <?php if ($sectorLabel !== ''): ?>
-          <span class="profile-header__badge profile-header__badge--muted"><?php echo sanitize($sectorLabel); ?></span>
-        <?php endif; ?>
-      </div>
-      <dl class="profile-header__meta">
-        <div>
-          <dt>Joined</dt>
-          <dd>
-            <?php if ($membershipSummary['short'] !== '—'): ?>
-              <span><?php echo sanitize($membershipSummary['short']); ?></span>
-              <?php if ($membershipSummary['long']): ?><span class="muted">(<?php echo sanitize($membershipSummary['long']); ?>)</span><?php endif; ?>
-            <?php else: ?>
-              <span class="muted">—</span>
-            <?php endif; ?>
-          </dd>
-        </div>
-        <div>
-          <dt>Last activity</dt>
-          <dd>
-            <?php if ($lastActiveRelative !== ''): ?>
-              <span><?php echo sanitize($lastActiveRelative); ?></span>
-              <?php if ($lastActiveFull !== ''): ?><span class="muted">(<?php echo sanitize($lastActiveFull); ?>)</span><?php endif; ?>
-            <?php else: ?>
-              <span class="muted">Waiting for first sign-in</span>
-            <?php endif; ?>
-          </dd>
-        </div>
-        <div>
-          <dt>Data source</dt>
-          <dd><span class="profile-header__chip"><?php echo sanitize(ucfirst((string)$storeSchema)); ?></span></dd>
-        </div>
-        <div>
-          <dt>User ID</dt>
-          <dd><span class="profile-header__chip">#<?php echo (int)$user['id']; ?></span></dd>
-        </div>
-      </dl>
-    </div>
-    <?php if ($securityHighlight): ?>
-      <div class="profile-header__callout profile-header__callout--<?php echo sanitize($securityHighlight['tone']); ?>">
-        <div class="profile-header__callout-icon" aria-hidden="true">🛡️</div>
-        <div class="profile-header__callout-text">
-          <h3><?php echo sanitize($securityHighlight['title']); ?></h3>
-          <?php if (!empty($securityHighlight['description'])): ?>
-            <p><?php echo sanitize($securityHighlight['description']); ?></p>
-          <?php endif; ?>
-          <p class="profile-header__callout-meta">
-            <?php if (!empty($securityHighlight['time'])): ?>
-              <span><?php echo sanitize($securityHighlight['time']); ?></span>
-            <?php endif; ?>
-            <?php if (!empty($securityHighlight['timestamp'])): ?>
-              <span><?php echo sanitize($securityHighlight['timestamp']); ?></span>
-            <?php endif; ?>
-          </p>
-        </div>
-      </div>
-    <?php endif; ?>
-    <?php if ($quickActions): ?>
-      <div class="profile-actions">
-        <?php foreach ($quickActions as $action): ?>
-          <a class="profile-actions__item" href="<?php echo sanitize($action['href']); ?>">
-            <span class="profile-actions__icon" aria-hidden="true"><?php echo sanitize($action['icon']); ?></span>
-            <span class="profile-actions__content">
-              <span class="profile-actions__label"><?php echo sanitize($action['label']); ?></span>
-              <span class="profile-actions__meta"><?php echo sanitize($action['description']); ?></span>
-            </span>
-          </a>
-        <?php endforeach; ?>
-      </div>
-    <?php endif; ?>
-    <?php if ($insightCards): ?>
-      <div class="profile-insights">
-        <?php foreach ($insightCards as $insight): ?>
-          <div class="profile-insight">
-            <span class="profile-insight__icon" aria-hidden="true"><?php echo sanitize($insight['icon']); ?></span>
-            <div class="profile-insight__content">
-              <p class="profile-insight__title"><?php echo sanitize($insight['title']); ?></p>
-              <p class="profile-insight__primary"><?php echo sanitize($insight['primary']); ?></p>
-              <?php if (!empty($insight['meta'])): ?>
-                <p class="profile-insight__meta"><?php echo sanitize($insight['meta']); ?></p>
-              <?php endif; ?>
-            </div>
-          </div>
-        <?php endforeach; ?>
-      </div>
-    <?php endif; ?>
-  </section>
-
+<div class="profile-page">
   <?php if ($errors): ?>
     <div class="flash flash-error"><?php echo sanitize(implode(' ', $errors)); ?></div>
   <?php endif; ?>
 
-  <div class="profile-grid">
-    <div class="profile-grid__main">
-      <form method="post" class="profile-panel card">
-        <div class="profile-panel__header">
-          <h2>Account access</h2>
-          <p class="profile-panel__subtitle">Keep your sign-in email current so we can reach you quickly.</p>
-        </div>
-        <div class="profile-panel__body">
-          <label class="profile-field">Email
-            <input type="email" name="email" required value="<?php echo sanitize((string)$user['email']); ?>">
-          </label>
-          <label class="profile-field">Role
-            <input type="text" value="<?php echo sanitize($roleLabel ?: '—'); ?>" disabled>
-          </label>
-        </div>
-        <div class="profile-panel__footer">
-          <input type="hidden" name="action" value="change_email">
-          <input type="hidden" name="<?php echo CSRF_TOKEN_NAME; ?>" value="<?php echo csrf_token(); ?>">
-          <button class="btn primary" type="submit">Save email</button>
-        </div>
-      </form>
-
-      <form method="post" class="profile-panel card">
-        <div class="profile-panel__header">
-          <h2>Team &amp; region</h2>
-          <p class="profile-panel__subtitle">Tag your primary sector so reports and exports stay relevant.</p>
-        </div>
-        <?php if ($sectorOptions): ?>
-          <div class="profile-panel__body">
-            <label class="profile-field">Primary team
-              <select name="sector_id">
-                <option value="">No primary team</option>
-                <?php $currentSectorId = isset($user['sector_id']) ? (int)$user['sector_id'] : null; ?>
-                <?php foreach ($sectorOptions as $id => $name): ?>
-                  <option value="<?php echo (int)$id; ?>"<?php echo ($currentSectorId !== null && $currentSectorId === (int)$id) ? ' selected' : ''; ?>><?php echo sanitize($name ?: 'Unnamed'); ?></option>
-                <?php endforeach; ?>
-              </select>
-            </label>
-            <p class="profile-help muted">Your choice personalizes dashboards and shared exports.</p>
+  <div class="profile-layout">
+    <aside class="profile-sidebar">
+      <section class="profile-card profile-card--identity card">
+        <div class="profile-identity">
+          <span class="profile-avatar"><?php echo sanitize(profile_avatar_initial($user['email'] ?? '')); ?></span>
+          <div class="profile-identity__text">
+            <p class="profile-identity__eyebrow">Account</p>
+            <h1>Profile</h1>
+            <p class="profile-identity__email"><?php echo sanitize($user['email'] ?? ''); ?></p>
           </div>
-          <div class="profile-panel__footer">
-            <input type="hidden" name="action" value="update_sector">
-            <input type="hidden" name="<?php echo CSRF_TOKEN_NAME; ?>" value="<?php echo csrf_token(); ?>">
-            <button class="btn primary" type="submit">Save team</button>
-          </div>
-        <?php else: ?>
-          <div class="profile-panel__body">
-            <p class="muted">We could not load sector options. Ask an administrator to add sectors.</p>
-          </div>
-        <?php endif; ?>
-      </form>
-
-      <form method="post" class="profile-panel card">
-        <div class="profile-panel__header">
-          <h2>Update password</h2>
-          <p class="profile-panel__subtitle">Use at least 8 characters and mix letters, numbers, and symbols.</p>
         </div>
-        <div class="profile-panel__body">
-          <label class="profile-field">Current password
-            <input type="password" name="current_password" required autocomplete="current-password">
-          </label>
-          <label class="profile-field">New password
-            <input type="password" name="new_password" required autocomplete="new-password" minlength="8" placeholder="At least 8 characters">
-          </label>
-          <label class="profile-field">Confirm new password
-            <input type="password" name="confirm_password" required autocomplete="new-password">
-          </label>
-        </div>
-        <div class="profile-panel__footer">
-          <input type="hidden" name="action" value="change_password">
-          <input type="hidden" name="<?php echo CSRF_TOKEN_NAME; ?>" value="<?php echo csrf_token(); ?>">
-          <button class="btn primary" type="submit">Update password</button>
-        </div>
-      </form>
-
-      <form method="post" class="profile-panel card">
-        <div class="profile-panel__header">
-          <h2>Notification preferences</h2>
-          <p class="profile-panel__subtitle">Design how and when we nudge you about the work that matters.</p>
-        </div>
-        <?php if (!$notificationsAvailable): ?>
-          <div class="profile-panel__body">
-            <p class="muted">Notification preferences are temporarily unavailable.</p>
-          </div>
-        <?php else: ?>
-          <div class="profile-panel__summary">
-            <span class="profile-panel__summary-chip"><?php echo (int)$notificationSummary['active_channels']; ?> active channel<?php echo ((int)$notificationSummary['active_channels'] === 1) ? '' : 's'; ?></span>
-            <?php if (!empty($notificationSummary['snoozed'])): ?>
-              <span class="profile-panel__summary-chip profile-panel__summary-chip--muted"><?php echo (int)$notificationSummary['snoozed']; ?> snoozed</span>
-            <?php endif; ?>
-          </div>
-          <div class="profile-panel__body pref-list">
-            <?php foreach ($notificationTypes as $type => $meta):
-              $pref      = $notificationPrefs[$type] ?? ['allow_web' => true, 'allow_email' => false, 'allow_push' => false, 'mute_until' => null];
-              $muteState = profile_mute_field_state($pref['mute_until']);
-              $fieldKey  = preg_replace('/[^a-z0-9]+/i', '_', $type);
-              $hasExistingMute = !empty($pref['mute_until']) && $muteState['select'] !== 'off';
-              $keepLabel = 'Keep current snooze';
-              if (!empty($pref['mute_until'])) {
-                  if ($muteState['select'] === 'forever') {
-                      $keepLabel = 'Keep mute on';
-                  } else {
-                      $keepLabel = 'Keep until ' . profile_format_datetime($pref['mute_until']);
-                  }
-              }
-            ?>
-              <div class="pref-row">
-                <div class="pref-row__info">
-                  <h3><?php echo sanitize($meta['label']); ?></h3>
-                  <p class="muted"><?php echo sanitize($meta['description']); ?></p>
-                </div>
-                <div class="pref-row__toggles">
-                  <label class="switch">
-                    <input type="checkbox" name="prefs[<?php echo sanitize($type); ?>][allow_web]" value="1"<?php echo $pref['allow_web'] ? ' checked' : ''; ?>>
-                    <span class="switch__control" aria-hidden="true"></span>
-                    <span class="switch__label">In-app</span>
-                  </label>
-                  <label class="switch">
-                    <input type="checkbox" name="prefs[<?php echo sanitize($type); ?>][allow_email]" value="1"<?php echo $pref['allow_email'] ? ' checked' : ''; ?>>
-                    <span class="switch__control" aria-hidden="true"></span>
-                    <span class="switch__label">Email</span>
-                  </label>
-                  <label class="switch">
-                    <input type="checkbox" name="prefs[<?php echo sanitize($type); ?>][allow_push]" value="1"<?php echo $pref['allow_push'] ? ' checked' : ''; ?>>
-                    <span class="switch__control" aria-hidden="true"></span>
-                    <span class="switch__label">Push</span>
-                  </label>
-                </div>
-                <div class="pref-row__mute">
-                  <label for="mute-<?php echo sanitize($fieldKey); ?>">Snooze</label>
-                  <select id="mute-<?php echo sanitize($fieldKey); ?>" name="prefs[<?php echo sanitize($type); ?>][mute_for]">
-                    <option value="off"<?php echo $muteState['select'] === 'off' ? ' selected' : ''; ?>>Live updates</option>
-                    <option value="1h"<?php echo $muteState['select'] === '1h' ? ' selected' : ''; ?>>Pause 1 hour</option>
-                    <option value="4h"<?php echo $muteState['select'] === '4h' ? ' selected' : ''; ?>>Pause 4 hours</option>
-                    <option value="1d"<?php echo $muteState['select'] === '1d' ? ' selected' : ''; ?>>Pause 1 day</option>
-                    <option value="3d"<?php echo $muteState['select'] === '3d' ? ' selected' : ''; ?>>Pause 3 days</option>
-                    <option value="7d"<?php echo $muteState['select'] === '7d' ? ' selected' : ''; ?>>Pause 7 days</option>
-                    <option value="forever"<?php echo $muteState['select'] === 'forever' ? ' selected' : ''; ?>>Mute until I turn it back on</option>
-                    <?php if ($hasExistingMute): ?>
-                      <option value="keep"<?php echo $muteState['select'] === 'keep' ? ' selected' : ''; ?>><?php echo sanitize($keepLabel); ?></option>
-                    <?php endif; ?>
-                  </select>
-                  <input type="hidden" name="prefs[<?php echo sanitize($type); ?>][existing_mute_until]" value="<?php echo sanitize((string)($pref['mute_until'] ?? '')); ?>">
-                  <?php if ($muteState['description']): ?>
-                    <p class="pref-row__hint"><?php echo sanitize($muteState['description']); ?></p>
-                  <?php endif; ?>
-                </div>
-              </div>
-            <?php endforeach; ?>
-          </div>
-          <div class="profile-panel__footer">
-            <input type="hidden" name="action" value="update_prefs">
-            <input type="hidden" name="<?php echo CSRF_TOKEN_NAME; ?>" value="<?php echo csrf_token(); ?>">
-            <button class="btn primary" type="submit">Save preferences</button>
-          </div>
-        <?php endif; ?>
-      </form>
-    </div>
-
-    <aside class="profile-grid__aside">
-      <section class="profile-panel card">
-        <div class="profile-panel__header">
-          <h2>Security timeline</h2>
-          <p class="profile-panel__subtitle">Latest sign-ins and account changes.</p>
-        </div>
-        <div class="profile-panel__body">
-          <?php if ($securityEvents): ?>
-            <ul class="timeline">
-              <?php foreach ($securityEvents as $event): ?>
-                <li class="timeline__item">
-                  <div class="timeline__title"><?php echo sanitize($event['title']); ?></div>
-                  <?php if ($event['details']): ?>
-                    <div class="timeline__details"><?php echo sanitize($event['details']); ?></div>
-                  <?php endif; ?>
-                  <?php if ($event['meta']): ?>
-                    <div class="timeline__meta"><?php echo sanitize($event['meta']); ?></div>
-                  <?php endif; ?>
-                  <div class="timeline__time"><?php echo sanitize($event['relative']); ?> · <?php echo sanitize($event['formatted']); ?></div>
-                </li>
-              <?php endforeach; ?>
-            </ul>
-          <?php else: ?>
-            <p class="muted">We have not logged any recent sign-ins yet.</p>
+        <div class="profile-chip-row">
+          <span class="badge <?php echo sanitize($statusBadgeClass); ?>"><?php echo sanitize($statusLabel); ?></span>
+          <?php if ($roleLabel !== ''): ?>
+            <span class="profile-chip"><?php echo sanitize($roleLabel); ?></span>
+          <?php endif; ?>
+          <?php if ($sectorLabel !== ''): ?>
+            <span class="profile-chip"><?php echo sanitize($sectorLabel); ?></span>
           <?php endif; ?>
         </div>
-      </section>
-
-      <section class="profile-panel card">
-        <div class="profile-panel__header">
-          <h2>Trusted devices</h2>
-          <p class="profile-panel__subtitle">Disconnect browsers or mobiles you no longer recognize.</p>
-        </div>
-        <div class="profile-panel__body">
-          <?php if (!$notificationsAvailable): ?>
-            <p class="muted">Connect a device to enable web or push notifications.</p>
-          <?php elseif ($notificationDevices): ?>
-            <ul class="device-list">
-              <?php foreach ($notificationDevices as $device):
-                $kind = (string)($device['kind'] ?? 'webpush');
-                $kindLabel = match ($kind) {
-                  'fcm'  => 'Android push',
-                  'apns' => 'iOS push',
-                  default => 'Web push',
-                };
-                $lastUsed = $device['last_used_at'] ?? $device['created_at'] ?? null;
-                $lastRelative = profile_relative_time($lastUsed);
-                $lastFormatted = profile_format_datetime($lastUsed);
-                $uaLabel = profile_summarize_user_agent($device['user_agent'] ?? '');
-              ?>
-                <li class="device-row">
-                  <div class="device-row__main">
-                    <span class="device-row__kind"><?php echo sanitize($kindLabel); ?></span>
-                    <div class="device-row__text">
-                      <div class="device-row__label"><?php echo sanitize($uaLabel); ?></div>
-                      <?php if ($lastFormatted): ?>
-                        <div class="device-row__meta"><?php echo sanitize($lastRelative ?: 'Last seen'); ?> · <?php echo sanitize($lastFormatted); ?></div>
-                      <?php endif; ?>
-                    </div>
-                  </div>
-                  <form method="post" class="device-row__actions">
-                    <input type="hidden" name="action" value="revoke_device">
-                    <input type="hidden" name="device_id" value="<?php echo (int)$device['id']; ?>">
-                    <input type="hidden" name="<?php echo CSRF_TOKEN_NAME; ?>" value="<?php echo csrf_token(); ?>">
-                    <button class="btn secondary small" type="submit">Disconnect</button>
-                  </form>
-                </li>
-              <?php endforeach; ?>
-            </ul>
-          <?php else: ?>
-            <p class="muted">No connected browsers or mobile devices yet.</p>
-          <?php endif; ?>
-        </div>
-      </section>
-
-      <?php if ($notificationsAvailable): ?>
-        <section class="profile-panel card">
-          <div class="profile-panel__header">
-            <h2>Inbox preview</h2>
-            <p class="profile-panel__subtitle">Last few notifications delivered to you.</p>
+        <dl class="profile-meta">
+          <div>
+            <dt>Joined</dt>
+            <dd>
+              <?php if ($membershipSummary['short'] !== '—'): ?>
+                <span><?php echo sanitize($membershipSummary['short']); ?></span>
+                <?php if ($membershipSummary['long']): ?><span class="muted">(<?php echo sanitize($membershipSummary['long']); ?>)</span><?php endif; ?>
+              <?php else: ?>
+                <span class="muted">—</span>
+              <?php endif; ?>
+            </dd>
           </div>
-          <div class="profile-panel__body">
-            <?php if ($recentNotifications): ?>
-              <ul class="inbox-list">
-                <?php foreach ($recentNotifications as $item): ?>
-                  <li class="inbox-item<?php echo $item['is_read'] ? ' is-read' : ''; ?>">
-                    <span class="inbox-item__status" aria-hidden="true"></span>
-                    <div class="inbox-item__content">
-                      <div class="inbox-item__title">
-                        <?php if (!empty($item['url'])): ?>
-                          <a href="<?php echo sanitize($item['url']); ?>"><?php echo sanitize($item['title']); ?></a>
-                        <?php else: ?>
-                          <?php echo sanitize($item['title']); ?>
-                        <?php endif; ?>
-                      </div>
-                      <?php if (!empty($item['body'])): ?>
-                        <p class="inbox-item__body"><?php echo sanitize($item['body']); ?></p>
-                      <?php endif; ?>
-                      <div class="inbox-item__meta"><?php echo sanitize($item['relative'] ?: $item['formatted']); ?></div>
-                    </div>
-                  </li>
-                <?php endforeach; ?>
-              </ul>
-            <?php else: ?>
-              <p class="muted">All caught up! We will list new alerts here once they arrive.</p>
-            <?php endif; ?>
+          <div>
+            <dt>Last activity</dt>
+            <dd>
+              <?php if ($lastActiveRelative !== ''): ?>
+                <span><?php echo sanitize($lastActiveRelative); ?></span>
+                <?php if ($lastActiveFull !== ''): ?><span class="muted">(<?php echo sanitize($lastActiveFull); ?>)</span><?php endif; ?>
+              <?php else: ?>
+                <span class="muted">Waiting for first sign-in</span>
+              <?php endif; ?>
+            </dd>
+          </div>
+          <div>
+            <dt>Data source</dt>
+            <dd><span class="profile-chip"><?php echo sanitize(ucfirst((string)$storeSchema)); ?></span></dd>
+          </div>
+          <div>
+            <dt>User ID</dt>
+            <dd><span class="profile-chip">#<?php echo (int)$user['id']; ?></span></dd>
+          </div>
+        </dl>
+      </section>
+
+      <?php if ($securityHighlight): ?>
+        <section class="profile-card profile-card--callout profile-card--<?php echo sanitize($securityHighlight['tone']); ?> card">
+          <div class="profile-callout">
+            <div class="profile-callout__icon" aria-hidden="true">🛡️</div>
+            <div class="profile-callout__body">
+              <p class="profile-card__eyebrow">Security</p>
+              <h2><?php echo sanitize($securityHighlight['title']); ?></h2>
+              <?php if (!empty($securityHighlight['description'])): ?>
+                <p><?php echo sanitize($securityHighlight['description']); ?></p>
+              <?php endif; ?>
+              <p class="profile-callout__meta">
+                <?php if (!empty($securityHighlight['time'])): ?>
+                  <span><?php echo sanitize($securityHighlight['time']); ?></span>
+                <?php endif; ?>
+                <?php if (!empty($securityHighlight['timestamp'])): ?>
+                  <span><?php echo sanitize($securityHighlight['timestamp']); ?></span>
+                <?php endif; ?>
+              </p>
+            </div>
           </div>
         </section>
       <?php endif; ?>
 
-      <?php if ($notificationsAvailable && $notificationSummary['total_types'] > 0): ?>
-        <section class="profile-panel card">
-          <div class="profile-panel__header">
-            <h2>Notification snapshot</h2>
-            <p class="profile-panel__subtitle">Your communication mix at a glance.</p>
-          </div>
-          <div class="profile-panel__body profile-meter">
-            <?php foreach ([
-              'in-app' => 'In-app',
-              'email'  => 'Email',
-              'push'   => 'Push',
-            ] as $key => $label):
-              $count = (int)($notificationSummary['channels'][$key] ?? 0);
-              $ratio = ($notificationSummary['total_types'] > 0)
-                ? min(100, (int)round(($count / $notificationSummary['total_types']) * 100))
-                : 0;
-            ?>
-              <div class="profile-meter__row">
-                <div class="profile-meter__label"><?php echo sanitize($label); ?></div>
-                <div class="profile-meter__bar" role="presentation">
-                  <span style="--value: <?php echo $ratio; ?>%"></span>
+      <?php if ($quickActions): ?>
+        <section class="profile-card card">
+          <h2 class="profile-card__title">Quick links</h2>
+          <ul class="profile-quick-actions">
+            <?php foreach ($quickActions as $action): ?>
+              <li>
+                <a class="profile-quick-action" href="<?php echo sanitize($action['href']); ?>">
+                  <span class="profile-quick-action__icon" aria-hidden="true"><?php echo sanitize($action['icon']); ?></span>
+                  <span class="profile-quick-action__body">
+                    <span class="profile-quick-action__label"><?php echo sanitize($action['label']); ?></span>
+                    <span class="profile-quick-action__meta"><?php echo sanitize($action['description']); ?></span>
+                  </span>
+                </a>
+              </li>
+            <?php endforeach; ?>
+          </ul>
+        </section>
+      <?php endif; ?>
+
+      <?php if ($insightCards): ?>
+        <section class="profile-card card">
+          <h2 class="profile-card__title">Snapshot</h2>
+          <div class="profile-insight-grid">
+            <?php foreach ($insightCards as $insight): ?>
+              <div class="profile-insight">
+                <span class="profile-insight__icon" aria-hidden="true"><?php echo sanitize($insight['icon']); ?></span>
+                <div class="profile-insight__content">
+                  <p class="profile-insight__title"><?php echo sanitize($insight['title']); ?></p>
+                  <p class="profile-insight__primary"><?php echo sanitize($insight['primary']); ?></p>
+                  <?php if (!empty($insight['meta'])): ?>
+                    <p class="profile-insight__meta"><?php echo sanitize($insight['meta']); ?></p>
+                  <?php endif; ?>
                 </div>
                 <div class="profile-meter__value"><?php echo $count; ?></div>
               </div>
             <?php endforeach; ?>
-            <?php if (!empty($notificationSummary['snoozed'])): ?>
-              <p class="profile-meter__note">Snoozed for <?php echo (int)$notificationSummary['snoozed']; ?> notification type<?php echo ((int)$notificationSummary['snoozed'] === 1) ? '' : 's'; ?>.</p>
-            <?php endif; ?>
           </div>
         </section>
       <?php endif; ?>
-
-      <section class="profile-panel card">
-        <div class="profile-panel__header">
-          <h2>Data tools</h2>
-          <p class="profile-panel__subtitle">On-demand exports you can share with stakeholders.</p>
-        </div>
-        <div class="profile-panel__body">
-          <ul class="export-list">
-            <?php foreach ($dataExportLinks as $export): ?>
-              <li class="export-row">
-                <div class="export-row__text">
-                  <a class="export-row__link" href="<?php echo sanitize($export['href']); ?>"><?php echo sanitize($export['label']); ?></a>
-                  <p class="export-row__meta muted"><?php echo sanitize($export['description']); ?></p>
-                </div>
-                <span aria-hidden="true" class="export-row__chevron">⟶</span>
-              </li>
-            <?php endforeach; ?>
-          </ul>
-        </div>
-      </section>
     </aside>
+
+    <div class="profile-main">
+      <div class="profile-main__forms">
+        <form method="post" class="profile-panel card">
+          <div class="profile-panel__header">
+            <h2>Contact email</h2>
+            <p class="profile-panel__subtitle">Keep your sign-in email current so we can reach you quickly.</p>
+          </div>
+          <div class="profile-panel__body">
+            <label class="profile-field">Email
+              <input type="email" name="email" required value="<?php echo sanitize((string)$user['email']); ?>">
+            </label>
+            <label class="profile-field">Role
+              <input type="text" value="<?php echo sanitize($roleLabel ?: '—'); ?>" disabled>
+            </label>
+          </div>
+          <div class="profile-panel__footer">
+            <input type="hidden" name="action" value="change_email">
+            <input type="hidden" name="<?php echo CSRF_TOKEN_NAME; ?>" value="<?php echo csrf_token(); ?>">
+            <button class="btn primary" type="submit">Save email</button>
+          </div>
+        </form>
+
+        <form method="post" class="profile-panel card">
+          <div class="profile-panel__header">
+            <h2>Primary team</h2>
+            <p class="profile-panel__subtitle">Tag the sector that best represents your work.</p>
+          </div>
+          <?php if ($sectorOptions): ?>
+            <div class="profile-panel__body">
+              <label class="profile-field">Team
+                <select name="sector_id">
+                  <option value="">No primary team</option>
+                  <?php $currentSectorId = isset($user['sector_id']) ? (int)$user['sector_id'] : null; ?>
+                  <?php foreach ($sectorOptions as $id => $name): ?>
+                    <option value="<?php echo (int)$id; ?>"<?php echo ($currentSectorId !== null && $currentSectorId === (int)$id) ? ' selected' : ''; ?>><?php echo sanitize($name ?: 'Unnamed'); ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </label>
+              <p class="profile-help muted">We use this to personalize dashboards and exports.</p>
+            </div>
+            <div class="profile-panel__footer">
+              <input type="hidden" name="action" value="update_sector">
+              <input type="hidden" name="<?php echo CSRF_TOKEN_NAME; ?>" value="<?php echo csrf_token(); ?>">
+              <button class="btn primary" type="submit">Save team</button>
+            </div>
+          <?php else: ?>
+            <div class="profile-panel__body">
+              <p class="muted">We could not load sector options. Ask an administrator to add sectors.</p>
+            </div>
+          <?php endif; ?>
+        </form>
+
+        <form method="post" class="profile-panel profile-panel--wide card">
+          <div class="profile-panel__header">
+            <h2>Update password</h2>
+            <p class="profile-panel__subtitle">Use at least 8 characters and mix letters, numbers, and symbols.</p>
+          </div>
+          <div class="profile-panel__body profile-panel__body--columns">
+            <label class="profile-field">Current password
+              <input type="password" name="current_password" required autocomplete="current-password">
+            </label>
+            <label class="profile-field">New password
+              <input type="password" name="new_password" required autocomplete="new-password" minlength="8" placeholder="At least 8 characters">
+            </label>
+            <label class="profile-field">Confirm new password
+              <input type="password" name="confirm_password" required autocomplete="new-password">
+            </label>
+          </div>
+          <div class="profile-panel__footer">
+            <input type="hidden" name="action" value="change_password">
+            <input type="hidden" name="<?php echo CSRF_TOKEN_NAME; ?>" value="<?php echo csrf_token(); ?>">
+            <button class="btn primary" type="submit">Update password</button>
+          </div>
+        </form>
+
+        <form method="post" class="profile-panel profile-panel--wide card">
+          <div class="profile-panel__header">
+            <h2>Notification preferences</h2>
+            <p class="profile-panel__subtitle">Choose how we reach you about new work.</p>
+          </div>
+          <?php if (!$notificationsAvailable): ?>
+            <div class="profile-panel__body">
+              <p class="muted">Notification preferences are temporarily unavailable.</p>
+            </div>
+          <?php else: ?>
+            <div class="profile-panel__summary">
+              <span class="profile-panel__summary-chip"><?php echo (int)$notificationSummary['active_channels']; ?> active channel<?php echo ((int)$notificationSummary['active_channels'] === 1) ? '' : 's'; ?></span>
+              <?php if (!empty($notificationSummary['snoozed'])): ?>
+                <span class="profile-panel__summary-chip profile-panel__summary-chip--muted"><?php echo (int)$notificationSummary['snoozed']; ?> snoozed</span>
+              <?php endif; ?>
+            </div>
+            <div class="profile-panel__body pref-list">
+              <?php foreach ($notificationTypes as $type => $meta):
+                $pref      = $notificationPrefs[$type] ?? ['allow_web' => true, 'allow_email' => false, 'allow_push' => false, 'mute_until' => null];
+                $muteState = profile_mute_field_state($pref['mute_until']);
+                $fieldKey  = preg_replace('/[^a-z0-9]+/i', '_', $type);
+                $hasExistingMute = !empty($pref['mute_until']) && $muteState['select'] !== 'off';
+                $keepLabel = 'Keep current snooze';
+                if (!empty($pref['mute_until'])) {
+                    if ($muteState['select'] === 'forever') {
+                        $keepLabel = 'Keep mute on';
+                    } else {
+                        $keepLabel = 'Keep until ' . profile_format_datetime($pref['mute_until']);
+                    }
+                }
+              ?>
+                <div class="pref-row">
+                  <div class="pref-row__info">
+                    <h3><?php echo sanitize($meta['label']); ?></h3>
+                    <p class="muted"><?php echo sanitize($meta['description']); ?></p>
+                  </div>
+                  <div class="pref-row__toggles">
+                    <label class="switch">
+                      <input type="checkbox" name="prefs[<?php echo sanitize($type); ?>][allow_web]" value="1"<?php echo $pref['allow_web'] ? ' checked' : ''; ?>>
+                      <span class="switch__control" aria-hidden="true"></span>
+                      <span class="switch__label">In-app</span>
+                    </label>
+                    <label class="switch">
+                      <input type="checkbox" name="prefs[<?php echo sanitize($type); ?>][allow_email]" value="1"<?php echo $pref['allow_email'] ? ' checked' : ''; ?>>
+                      <span class="switch__control" aria-hidden="true"></span>
+                      <span class="switch__label">Email</span>
+                    </label>
+                    <label class="switch">
+                      <input type="checkbox" name="prefs[<?php echo sanitize($type); ?>][allow_push]" value="1"<?php echo $pref['allow_push'] ? ' checked' : ''; ?>>
+                      <span class="switch__control" aria-hidden="true"></span>
+                      <span class="switch__label">Push</span>
+                    </label>
+                  </div>
+                  <div class="pref-row__mute">
+                    <label for="mute-<?php echo sanitize($fieldKey); ?>">Snooze</label>
+                    <select id="mute-<?php echo sanitize($fieldKey); ?>" name="prefs[<?php echo sanitize($type); ?>][mute_for]">
+                      <option value="off"<?php echo $muteState['select'] === 'off' ? ' selected' : ''; ?>>Live updates</option>
+                      <option value="1h"<?php echo $muteState['select'] === '1h' ? ' selected' : ''; ?>>Pause 1 hour</option>
+                      <option value="4h"<?php echo $muteState['select'] === '4h' ? ' selected' : ''; ?>>Pause 4 hours</option>
+                      <option value="1d"<?php echo $muteState['select'] === '1d' ? ' selected' : ''; ?>>Pause 1 day</option>
+                      <option value="3d"<?php echo $muteState['select'] === '3d' ? ' selected' : ''; ?>>Pause 3 days</option>
+                      <option value="7d"<?php echo $muteState['select'] === '7d' ? ' selected' : ''; ?>>Pause 7 days</option>
+                      <option value="forever"<?php echo $muteState['select'] === 'forever' ? ' selected' : ''; ?>>Mute until I turn it back on</option>
+                      <?php if ($hasExistingMute): ?>
+                        <option value="keep"<?php echo $muteState['select'] === 'keep' ? ' selected' : ''; ?>><?php echo sanitize($keepLabel); ?></option>
+                      <?php endif; ?>
+                    </select>
+                    <input type="hidden" name="prefs[<?php echo sanitize($type); ?>][existing_mute_until]" value="<?php echo sanitize((string)($pref['mute_until'] ?? '')); ?>">
+                    <?php if ($muteState['description']): ?>
+                      <p class="pref-row__hint"><?php echo sanitize($muteState['description']); ?></p>
+                    <?php endif; ?>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+            <div class="profile-panel__footer">
+              <input type="hidden" name="action" value="update_prefs">
+              <input type="hidden" name="<?php echo CSRF_TOKEN_NAME; ?>" value="<?php echo csrf_token(); ?>">
+              <button class="btn primary" type="submit">Save preferences</button>
+            </div>
+          <?php endif; ?>
+        </form>
+      </div>
+
+      <div class="profile-subgrid">
+        <section class="profile-panel card">
+          <div class="profile-panel__header">
+            <h2>Security timeline</h2>
+            <p class="profile-panel__subtitle">Latest sign-ins and account changes.</p>
+          </div>
+          <div class="profile-panel__body">
+            <?php if ($securityEvents): ?>
+              <ul class="timeline">
+                <?php foreach ($securityEvents as $event): ?>
+                  <li class="timeline__item">
+                    <div class="timeline__title"><?php echo sanitize($event['title']); ?></div>
+                    <?php if ($event['details']): ?>
+                      <div class="timeline__details"><?php echo sanitize($event['details']); ?></div>
+                    <?php endif; ?>
+                    <?php if ($event['meta']): ?>
+                      <div class="timeline__meta"><?php echo sanitize($event['meta']); ?></div>
+                    <?php endif; ?>
+                    <div class="timeline__time"><?php echo sanitize($event['relative']); ?> · <?php echo sanitize($event['formatted']); ?></div>
+                  </li>
+                <?php endforeach; ?>
+              </ul>
+            <?php else: ?>
+              <p class="muted">We have not logged any recent sign-ins yet.</p>
+            <?php endif; ?>
+          </div>
+        </section>
+
+        <section class="profile-panel card">
+          <div class="profile-panel__header">
+            <h2>Trusted devices</h2>
+            <p class="profile-panel__subtitle">Disconnect browsers or mobiles you no longer recognize.</p>
+          </div>
+          <div class="profile-panel__body">
+            <?php if (!$notificationsAvailable): ?>
+              <p class="muted">Connect a device to enable web or push notifications.</p>
+            <?php elseif ($notificationDevices): ?>
+              <ul class="device-list">
+                <?php foreach ($notificationDevices as $device):
+                  $kind = (string)($device['kind'] ?? 'webpush');
+                  $kindLabel = match ($kind) {
+                    'fcm'  => 'Android push',
+                    'apns' => 'iOS push',
+                    default => 'Web push',
+                  };
+                  $lastUsed = $device['last_used_at'] ?? $device['created_at'] ?? null;
+                  $lastRelative = profile_relative_time($lastUsed);
+                  $lastFormatted = profile_format_datetime($lastUsed);
+                  $uaLabel = profile_summarize_user_agent($device['user_agent'] ?? '');
+                ?>
+                  <li class="device-row">
+                    <div class="device-row__main">
+                      <span class="device-row__kind"><?php echo sanitize($kindLabel); ?></span>
+                      <div class="device-row__text">
+                        <div class="device-row__label"><?php echo sanitize($uaLabel); ?></div>
+                        <?php if ($lastFormatted): ?>
+                          <div class="device-row__meta"><?php echo sanitize($lastRelative ?: 'Last seen'); ?> · <?php echo sanitize($lastFormatted); ?></div>
+                        <?php endif; ?>
+                      </div>
+                    </div>
+                    <form method="post" class="device-row__actions">
+                      <input type="hidden" name="action" value="revoke_device">
+                      <input type="hidden" name="device_id" value="<?php echo (int)$device['id']; ?>">
+                      <input type="hidden" name="<?php echo CSRF_TOKEN_NAME; ?>" value="<?php echo csrf_token(); ?>">
+                      <button class="btn secondary small" type="submit">Disconnect</button>
+                    </form>
+                  </li>
+                <?php endforeach; ?>
+              </ul>
+            <?php else: ?>
+              <p class="muted">No connected browsers or mobile devices yet.</p>
+            <?php endif; ?>
+          </div>
+        </section>
+
+        <?php if ($notificationsAvailable): ?>
+          <section class="profile-panel card">
+            <div class="profile-panel__header">
+              <h2>Inbox preview</h2>
+              <p class="profile-panel__subtitle">Last few notifications delivered to you.</p>
+            </div>
+            <div class="profile-panel__body">
+              <?php if ($recentNotifications): ?>
+                <ul class="inbox-list">
+                  <?php foreach ($recentNotifications as $item): ?>
+                    <li class="inbox-item<?php echo $item['is_read'] ? ' is-read' : ''; ?>">
+                      <span class="inbox-item__status" aria-hidden="true"></span>
+                      <div class="inbox-item__content">
+                        <div class="inbox-item__title">
+                          <?php if (!empty($item['url'])): ?>
+                            <a href="<?php echo sanitize($item['url']); ?>"><?php echo sanitize($item['title']); ?></a>
+                          <?php else: ?>
+                            <?php echo sanitize($item['title']); ?>
+                          <?php endif; ?>
+                        </div>
+                        <?php if (!empty($item['body'])): ?>
+                          <p class="inbox-item__body"><?php echo sanitize($item['body']); ?></p>
+                        <?php endif; ?>
+                        <div class="inbox-item__meta"><?php echo sanitize($item['relative'] ?: $item['formatted']); ?></div>
+                      </div>
+                    </li>
+                  <?php endforeach; ?>
+                </ul>
+              <?php else: ?>
+                <p class="muted">All caught up! We will list new alerts here once they arrive.</p>
+              <?php endif; ?>
+            </div>
+          </section>
+        <?php endif; ?>
+
+        <?php if ($notificationsAvailable && $notificationSummary['total_types'] > 0): ?>
+          <section class="profile-panel card">
+            <div class="profile-panel__header">
+              <h2>Notification snapshot</h2>
+              <p class="profile-panel__subtitle">Your communication mix at a glance.</p>
+            </div>
+            <div class="profile-panel__body profile-meter">
+              <?php foreach ([
+                'in-app' => 'In-app',
+                'email'  => 'Email',
+                'push'   => 'Push',
+              ] as $key => $label):
+                $count = (int)($notificationSummary['channels'][$key] ?? 0);
+                $ratio = ($notificationSummary['total_types'] > 0)
+                  ? min(100, (int)round(($count / $notificationSummary['total_types']) * 100))
+                  : 0;
+              ?>
+                <div class="profile-meter__row">
+                  <div class="profile-meter__label"><?php echo sanitize($label); ?></div>
+                  <div class="profile-meter__bar" role="presentation">
+                    <span style="--value: <?php echo $ratio; ?>%"></span>
+                  </div>
+                  <div class="profile-meter__value"><?php echo $count; ?></div>
+                </div>
+              <?php endforeach; ?>
+              <?php if (!empty($notificationSummary['snoozed'])): ?>
+                <p class="profile-meter__note">Snoozed for <?php echo (int)$notificationSummary['snoozed']; ?> notification type<?php echo ((int)$notificationSummary['snoozed'] === 1) ? '' : 's'; ?>.</p>
+              <?php endif; ?>
+            </div>
+          </section>
+        <?php endif; ?>
+
+        <section class="profile-panel card profile-span-2">
+          <div class="profile-panel__header">
+            <h2>Data tools</h2>
+            <p class="profile-panel__subtitle">On-demand exports you can share with stakeholders.</p>
+          </div>
+          <div class="profile-panel__body">
+            <ul class="export-list">
+              <?php foreach ($dataExportLinks as $export): ?>
+                <li class="export-row">
+                  <div class="export-row__text">
+                    <a class="export-row__link" href="<?php echo sanitize($export['href']); ?>"><?php echo sanitize($export['label']); ?></a>
+                    <p class="export-row__meta muted"><?php echo sanitize($export['description']); ?></p>
+                  </div>
+                  <span aria-hidden="true" class="export-row__chevron">⟶</span>
+                </li>
+              <?php endforeach; ?>
+            </ul>
+          </div>
+        </section>
+      </div>
+    </div>
   </div>
 </div>
 
