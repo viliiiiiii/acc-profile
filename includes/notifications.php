@@ -323,6 +323,11 @@ function notif_mark_unread(int $userId, int $notifId): void {
     $sql = "UPDATE notifications SET is_read=0, read_at=NULL WHERE id=:id AND user_id=:u";
     $pdo->prepare($sql)->execute([':id' => $notifId, ':u' => $userId]);
 }
+function notif_delete(int $userId, int $notifId): void {
+    $pdo = notif_pdo();
+    $sql = "DELETE FROM notifications WHERE id=:id AND user_id=:u";
+    $pdo->prepare($sql)->execute([':id' => $notifId, ':u' => $userId]);
+}
 function notif_mark_all_read(int $userId): void {
     $pdo = notif_pdo();
     $sql = "UPDATE notifications SET is_read=1, read_at=NOW() WHERE user_id=:u AND is_read=0";

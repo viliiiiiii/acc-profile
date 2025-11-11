@@ -191,58 +191,11 @@ $title = 'Notifications';
 include __DIR__ . '/../includes/header.php';
 ?>
 <section class="notifications-board">
-  <aside class="notifications-board__side">
-    <header class="notif-side__header">
-      <h1>Notifications</h1>
-      <p class="notif-side__hint">Catch up on recent activity without leaving this page.</p>
-    </header>
-    <div class="notif-count<?php echo $unreadTotal ? '' : ' is-zero'; ?>" data-unread-wrapper>
-      <span class="notif-count__value" data-unread-count><?php echo (int)$unreadTotal; ?></span>
-      <span class="notif-count__label">Unread</span>
-    </div>
-    <div class="notif-side__section">
-      <h2 class="notif-section-title">At a glance</h2>
-      <div class="notif-summary">
-        <article class="notif-summary__item" data-stat="unread">
-          <span class="notif-stat__label">Unread</span>
-          <span class="notif-stat__value"><?php echo (int)$unreadTotal; ?></span>
-          <span class="notif-stat__hint">Awaiting review</span>
-        </article>
-        <article class="notif-summary__item" data-stat="today">
-          <span class="notif-stat__label">Today</span>
-          <span class="notif-stat__value"><?php echo (int)$todayCount; ?></span>
-          <span class="notif-stat__hint">Arrived since midnight</span>
-        </article>
-        <article class="notif-summary__item" data-stat="week">
-          <span class="notif-stat__label">This week</span>
-          <span class="notif-stat__value"><?php echo (int)$weekCount; ?></span>
-          <span class="notif-stat__hint">Past seven days</span>
-        </article>
-        <article class="notif-summary__item" data-stat="total">
-          <span class="notif-stat__label">Listed here</span>
-          <span class="notif-stat__value"><?php echo (int)$totalCount; ?></span>
-          <span class="notif-stat__hint">Matching filters</span>
-        </article>
-      </div>
-    </div>
-    <div class="notif-side__section">
-      <h2 class="notif-section-title">Filter by</h2>
-      <div class="notif-filter" role="group" aria-label="Notification filters">
-        <button type="button" class="notif-filter__btn is-active" data-filter="all" aria-pressed="true">All</button>
-        <button type="button" class="notif-filter__btn" data-filter="unread" aria-pressed="false">Unread</button>
-        <button type="button" class="notif-filter__btn" data-filter="recent" aria-pressed="false">Recent</button>
-        <button type="button" class="notif-filter__btn" data-filter="task" aria-pressed="false">Tasks</button>
-        <button type="button" class="notif-filter__btn" data-filter="note" aria-pressed="false">Notes</button>
-        <button type="button" class="notif-filter__btn" data-filter="other" aria-pressed="false">Other</button>
-      </div>
-    </div>
-  </aside>
-
   <div class="notifications-board__main">
-    <div class="notif-main__toolbar">
-      <div class="notif-main__status" data-match-text>
-        Showing <strong data-match-count><?php echo (int)$totalCount; ?></strong>
-        <span data-match-label><?php echo $totalCount === 1 ? 'update' : 'updates'; ?></span>
+    <header class="notif-main__header">
+      <div class="notif-main__intro">
+        <h1>Notifications</h1>
+        <p>Review the latest activity and take action without leaving this page.</p>
       </div>
       <div class="notif-main__actions">
         <form method="post" action="/notifications/api.php" class="inline" data-action="mark-all">
@@ -252,12 +205,45 @@ include __DIR__ . '/../includes/header.php';
         </form>
         <button type="button" class="btn ghost small" data-refresh>Refresh</button>
       </div>
+    </header>
+
+    <div class="notif-main__panel">
+      <div class="notif-filter" role="group" aria-label="Notification filters">
+        <button type="button" class="notif-filter__btn is-active" data-filter="all" aria-pressed="true">All</button>
+        <button type="button" class="notif-filter__btn" data-filter="unread" aria-pressed="false">Unread</button>
+        <button type="button" class="notif-filter__btn" data-filter="recent" aria-pressed="false">Recent</button>
+        <button type="button" class="notif-filter__btn" data-filter="task" aria-pressed="false">Tasks</button>
+        <button type="button" class="notif-filter__btn" data-filter="note" aria-pressed="false">Notes</button>
+        <button type="button" class="notif-filter__btn" data-filter="other" aria-pressed="false">Other</button>
+      </div>
+      <div class="notif-searchbar">
+        <span class="notif-searchbar__icon" aria-hidden="true">🔍</span>
+        <input type="search" class="notif-searchbar__input" placeholder="Search notifications" autocomplete="off" data-search>
+        <button type="button" class="notif-searchbar__clear" data-clear-search>Clear</button>
+      </div>
     </div>
 
-    <div class="notif-searchbar">
-      <span class="notif-searchbar__icon" aria-hidden="true">🔍</span>
-      <input type="search" class="notif-searchbar__input" placeholder="Search notifications" autocomplete="off" data-search>
-      <button type="button" class="notif-searchbar__clear" data-clear-search>Clear</button>
+    <div class="notif-statline" data-unread-wrapper>
+      <div class="notif-statline__item">
+        <span class="notif-statline__label">Unread</span>
+        <strong class="notif-statline__value" data-unread-count><?php echo (int)$unreadTotal; ?></strong>
+      </div>
+      <div class="notif-statline__item" data-stat="today">
+        <span class="notif-statline__label">Today</span>
+        <strong class="notif-statline__value"><?php echo (int)$todayCount; ?></strong>
+      </div>
+      <div class="notif-statline__item" data-stat="week">
+        <span class="notif-statline__label">This week</span>
+        <strong class="notif-statline__value"><?php echo (int)$weekCount; ?></strong>
+      </div>
+      <div class="notif-statline__item" data-stat="total">
+        <span class="notif-statline__label">Listed</span>
+        <strong class="notif-statline__value"><?php echo (int)$totalCount; ?></strong>
+      </div>
+      <div class="notif-main__status" data-match-text>
+        Showing <strong data-match-count><?php echo (int)$totalCount; ?></strong>
+        <span data-match-label><?php echo $totalCount === 1 ? 'update' : 'updates'; ?></span>
+      </div>
     </div>
 
     <?php if ($hasNotifications): ?>
@@ -265,13 +251,13 @@ include __DIR__ . '/../includes/header.php';
         <?php foreach ($groups as $group): ?>
           <section class="notif-group" data-day-section data-day-tag="<?php echo sanitize($group['tag']); ?>">
             <header class="notif-group__header">
-              <div>
-                <h2 class="notif-group__title"><?php echo sanitize($group['label']); ?></h2>
+              <h2 class="notif-group__title"><?php echo sanitize($group['label']); ?></h2>
+              <div class="notif-group__meta">
                 <?php if (!empty($group['date'])): ?>
                   <span class="notif-group__date"><?php echo sanitize($group['date']); ?></span>
                 <?php endif; ?>
+                <span class="notif-group__count" data-day-count><?php $count = count($group['items']); echo $count === 1 ? '1 update' : $count . ' updates'; ?></span>
               </div>
-              <span class="notif-group__count" data-day-count><?php $count = count($group['items']); echo $count === 1 ? '1 update' : $count . ' updates'; ?></span>
             </header>
             <div class="notif-group__list">
               <?php foreach ($group['items'] as $item):
@@ -283,15 +269,15 @@ include __DIR__ . '/../includes/header.php';
                 <article class="notif-item<?php echo $isUnread ? ' is-unread' : ''; ?>" data-entry data-id="<?php echo (int)$item['id']; ?>" data-type="<?php echo sanitize($item['type_key']); ?>" data-category="<?php echo sanitize($item['category']); ?>" data-read="<?php echo $isUnread ? '0' : '1'; ?>" data-search="<?php echo $searchBlob; ?>" data-day-tag="<?php echo sanitize($item['day_tag']); ?>" data-week="<?php echo !empty($item['week_flag']) ? '1' : '0'; ?>">
                   <div class="notif-item__icon" aria-hidden="true"><?php echo $item['icon']; ?></div>
                   <div class="notif-item__body">
-                    <div class="notif-item__head">
+                    <header class="notif-item__head">
                       <span class="notif-item__title"><?php echo sanitize($item['title']); ?></span>
                       <span class="notif-item__badge"><?php echo sanitize($item['label']); ?></span>
                       <span class="notif-item__status<?php echo $isUnread ? ' is-unread' : ''; ?>" data-status><?php echo $isUnread ? 'Unread' : 'Read'; ?></span>
-                    </div>
+                    </header>
                     <?php if ($item['body'] !== ''): ?>
                       <p class="notif-item__text"><?php echo nl2br(sanitize($item['body'])); ?></p>
                     <?php endif; ?>
-                    <div class="notif-item__meta">
+                    <footer class="notif-item__meta">
                       <?php if ($timeAttr): ?>
                         <time class="notif-item__time" datetime="<?php echo sanitize($timeAttr); ?>"><?php echo sanitize($timeDisplay); ?></time>
                       <?php elseif ($timeDisplay): ?>
@@ -307,8 +293,14 @@ include __DIR__ . '/../includes/header.php';
                           <button type="submit" class="btn ghost xsmall" name="action" value="mark_read" data-toggle-read <?php echo $isUnread ? '' : 'hidden'; ?>>Mark read</button>
                           <button type="submit" class="btn ghost xsmall" name="action" value="mark_unread" data-toggle-unread <?php echo $isUnread ? 'hidden' : ''; ?>>Mark unread</button>
                         </form>
+                        <form method="post" action="/notifications/api.php" class="notif-item__delete" data-action="delete">
+                          <input type="hidden" name="action" value="delete">
+                          <input type="hidden" name="id" value="<?php echo (int)$item['id']; ?>">
+                          <input type="hidden" name="<?php echo CSRF_TOKEN_NAME; ?>" value="<?php echo csrf_token(); ?>">
+                          <button type="submit" class="btn ghost xsmall danger">Delete</button>
+                        </form>
                       </div>
-                    </div>
+                    </footer>
                   </div>
                 </article>
               <?php endforeach; ?>
@@ -337,7 +329,7 @@ include __DIR__ . '/../includes/header.php';
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const feed = document.querySelector('[data-feed]');
-  const entries = feed ? Array.from(feed.querySelectorAll('[data-entry]')) : [];
+  let entries = feed ? Array.from(feed.querySelectorAll('[data-entry]')) : [];
   const countNode = document.querySelector('[data-unread-count]');
   const wrapper = document.querySelector('[data-unread-wrapper]');
   const dot = document.getElementById('notifDot');
@@ -353,10 +345,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const emptyMessage = emptyState ? emptyState.querySelector('[data-empty-message]') : null;
   const emptyReset = emptyState ? emptyState.querySelector('[data-empty-reset]') : null;
   const statNodes = {
-    unread: document.querySelector('[data-stat="unread"] .notif-stat__value'),
-    today: document.querySelector('[data-stat="today"] .notif-stat__value'),
-    week: document.querySelector('[data-stat="week"] .notif-stat__value'),
-    total: document.querySelector('[data-stat="total"] .notif-stat__value')
+    today: document.querySelector('[data-stat="today"] .notif-statline__value'),
+    week: document.querySelector('[data-stat="week"] .notif-statline__value'),
+    total: document.querySelector('[data-stat="total"] .notif-statline__value')
   };
   const matchesSuffix = { singular: 'update', plural: 'updates' };
   let currentFilter = 'all';
@@ -375,11 +366,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function calculateStats() {
-    const unread = getUnreadCount();
     const today = entries.filter(entry => entry.dataset.dayTag === 'today').length;
     const week = entries.filter(entry => entry.dataset.week === '1').length;
     const total = entries.length;
-    if (statNodes.unread) statNodes.unread.textContent = unread;
     if (statNodes.today) statNodes.today.textContent = today;
     if (statNodes.week) statNodes.week.textContent = week;
     if (statNodes.total) statNodes.total.textContent = total;
@@ -550,6 +539,147 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function updateDaySections(visibleMap) {
+    document.querySelectorAll('[data-day-section]').forEach(section => {
+      const visibleCount = visibleMap.get(section) || 0;
+      const countNode = section.querySelector('[data-day-count]');
+      section.hidden = visibleCount === 0;
+      if (countNode) {
+        countNode.textContent = visibleCount === 1 ? '1 update' : `${visibleCount} updates`;
+      }
+    });
+  }
+
+  function applyFilters() {
+    if (!entries.length) {
+      if (emptyState) {
+        emptyState.hidden = false;
+        if (emptyTitle) {
+          emptyTitle.textContent = emptyState.dataset.baseTitle || 'You’re all caught up';
+        }
+        if (emptyMessage) {
+          emptyMessage.textContent = emptyState.dataset.baseMessage || 'When new activity arrives, it will appear here automatically.';
+        }
+        if (emptyReset) {
+          emptyReset.hidden = true;
+        }
+      }
+      updateMatchDisplay(0);
+      updateDaySections(new Map());
+      return;
+    }
+
+    const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+    const filter = currentFilter;
+    const visibleMap = new Map();
+    let visible = 0;
+
+    entries.forEach(entry => {
+      const category = entry.dataset.category || 'other';
+      const isUnread = entry.dataset.read === '0';
+      const matchesFilter = filter === 'all'
+        || (filter === 'unread' && isUnread)
+        || (filter === category)
+        || (filter === 'recent' && (entry.dataset.dayTag === 'today' || entry.dataset.dayTag === 'yesterday'));
+      const haystack = entry.dataset.search || '';
+      const matchesSearch = !query || haystack.indexOf(query) !== -1;
+
+      const show = matchesFilter && matchesSearch;
+      entry.hidden = !show;
+      entry.classList.toggle('is-hidden', !show);
+
+      if (show) {
+        visible += 1;
+        const section = entry.closest('[data-day-section]');
+        if (section) {
+          visibleMap.set(section, (visibleMap.get(section) || 0) + 1);
+        }
+      }
+    });
+
+    updateDaySections(visibleMap);
+    updateMatchDisplay(visible);
+
+    if (emptyState) {
+      if (visible === 0) {
+        emptyState.hidden = false;
+        if (emptyTitle) {
+          emptyTitle.textContent = emptyState.dataset.filterTitle || 'No notifications match';
+        }
+        if (emptyMessage) {
+          emptyMessage.textContent = emptyState.dataset.filterMessage || 'Clear filters or adjust your search to see more updates.';
+        }
+        if (emptyReset) {
+          emptyReset.hidden = false;
+        }
+      } else {
+        emptyState.hidden = true;
+        if (emptyReset) {
+          emptyReset.hidden = true;
+        }
+      }
+    }
+  }
+
+  calculateStats();
+  renderCount(getUnreadCount());
+  applyFilters();
+
+  filterButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentFilter = btn.dataset.filter || 'all';
+      filterButtons.forEach(b => {
+        const isActive = b === btn;
+        b.classList.toggle('is-active', isActive);
+        b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+      applyFilters();
+    });
+  });
+
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      applyFilters();
+      if (clearSearch) {
+        clearSearch.hidden = searchInput.value.length === 0;
+      }
+    });
+  }
+
+  if (clearSearch) {
+    clearSearch.addEventListener('click', () => {
+      if (searchInput) {
+        searchInput.value = '';
+      }
+      clearSearch.hidden = true;
+      applyFilters();
+      if (searchInput) {
+        searchInput.focus();
+      }
+    });
+    if (!searchInput || !searchInput.value) {
+      clearSearch.hidden = true;
+    }
+  }
+
+  if (emptyReset) {
+    emptyReset.addEventListener('click', () => {
+      currentFilter = 'all';
+      filterButtons.forEach(b => {
+        const isActive = b.dataset.filter === 'all';
+        b.classList.toggle('is-active', isActive);
+        b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+      if (searchInput) {
+        searchInput.value = '';
+      }
+      if (clearSearch) {
+        clearSearch.hidden = true;
+      }
+      applyFilters();
+    });
+  }
+
   async function postForm(form, submitter) {
     const data = new FormData(form);
     if (submitter && submitter.name) {
@@ -572,6 +702,24 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       throw new Error('Invalid response');
     }
+  }
+
+  function removeEntry(entry, unreadCount) {
+    if (!entry) {
+      return;
+    }
+    entries = entries.filter(node => node !== entry);
+    const section = entry.closest('[data-day-section]');
+    entry.remove();
+    if (section) {
+      const remaining = section.querySelectorAll('[data-entry]').length;
+      if (remaining === 0) {
+        section.remove();
+      }
+    }
+    calculateStats();
+    renderCount(typeof unreadCount === 'number' ? unreadCount : getUnreadCount());
+    applyFilters();
   }
 
   function handleToggle(form) {
@@ -619,6 +767,28 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   document.querySelectorAll('form[data-action="toggle-read"]').forEach(handleToggle);
+
+  function handleDelete(form) {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!confirm('Delete this notification?')) {
+        return;
+      }
+      try {
+        const json = await postForm(form);
+        if (!json || !json.ok) {
+          return;
+        }
+        const entry = form.closest('[data-entry]');
+        removeEntry(entry, typeof json.count === 'number' ? json.count : undefined);
+      } catch (err) {
+        console.error(err);
+        form.submit();
+      }
+    });
+  }
+
+  document.querySelectorAll('form[data-action="delete"]').forEach(handleDelete);
 
   if (markAllForm) {
     markAllForm.addEventListener('submit', async (event) => {

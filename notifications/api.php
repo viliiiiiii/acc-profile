@@ -261,6 +261,19 @@ try {
             notifications_api_respond(['ok'=>true,'count'=>$count], $wantsJson, 200, 'All notifications marked as read.');
             break;
 
+        case 'delete':
+            if (!verify_csrf_token($_POST[CSRF_TOKEN_NAME] ?? null)) {
+                notifications_api_respond(['ok'=>false,'error'=>'csrf'], $wantsJson, 422, '', 'We could not verify that request.');
+                break;
+            }
+            $id = (int)($_POST['id'] ?? 0);
+            if ($id) {
+                notif_delete($userId, $id);
+            }
+            $count = notif_unread_count($userId);
+            notifications_api_respond(['ok'=>true,'count'=>$count], $wantsJson, 200, 'Notification removed.');
+            break;
+
         default:
             notifications_api_respond(['ok'=>false,'error'=>'bad_action'], $wantsJson, 400, '', 'Unsupported notification action.');
     }
